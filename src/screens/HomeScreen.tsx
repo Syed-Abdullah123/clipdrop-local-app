@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
+  // KeyboardAvoidingView,
   Platform,
   ToastAndroid,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 // import * as FileSystem from 'expo-file-system';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalServer } from '../hooks/useLocalServer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRDisplay from '../components/QRDisplay';
@@ -84,7 +85,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.root}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {/* Header */}
         <View style={styles.header}>
