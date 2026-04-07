@@ -9,18 +9,22 @@ import {
   // KeyboardAvoidingView,
   Platform,
   ToastAndroid,
+  Modal,
+  Pressable,
+  Keyboard
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 // import * as FileSystem from 'expo-file-system';
+import {
+  readAsStringAsync,
+  EncodingType,
+} from 'expo-file-system/legacy';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalServer } from '../hooks/useLocalServer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRDisplay from '../components/QRDisplay';
 import ClipList from '../components/ClipList';
-
-function generateId(): string {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
 
 function isLink(text: string): boolean {
   return /^https?:\/\//.test(text.trim());
@@ -29,6 +33,7 @@ function isLink(text: string): boolean {
 export default function HomeScreen() {
   const { serverState, clips, sendClip, clearClips } = useLocalServer();
   const [inputText, setInputText] = useState('');
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
 
   const handleSend = () => {
     const text = inputText.trim();
@@ -42,42 +47,100 @@ export default function HomeScreen() {
     setInputText('');
   };
 
-  const handlePickImage = async () => {
+  // Read any file URI to base64 and send it
+  const sendFileAsClip = async (
+    uri: string,
+    filename: string,
+    mimeType: string,
+  ) => {
     try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        ToastAndroid.show("Permission denied", ToastAndroid.SHORT);
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images", // replaces deprecated MediaTypeOptions.Images
-        quality: 0.7,
-        base64: true, // let expo-image-picker do the base64 conversion
+      const base64 = await readAsStringAsync(uri, {
+        encoding: EncodingType.Base64,
       });
 
-      if (result.canceled || !result.assets[0]) return;
+      let type: 'image' | 'video' | 'audio' | 'file' = 'file';
+      if (mimeType.startsWith('image/')) type = 'image';
+      else if (mimeType.startsWith('video/')) type = 'video';
+      else if (mimeType.startsWith('audio/')) type = 'audio';
 
-      const asset = result.assets[0];
+      sendClip({ type, content: base64, filename, mimeType });
+    } catch (e) {
+      console.error('File read error:', e);
+      ToastAndroid.show('Failed to read file', ToastAndroid.SHORT);
+    }
+  };
 
-      if (!asset.base64) {
-        ToastAndroid.show("Failed to read image", ToastAndroid.SHORT);
+  // Pick image from gallery
+  const handlePickImage = async () => {
+    setShowAttachMenu(false);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        ToastAndroid.show('Permission denied', ToastAndroid.SHORT);
         return;
       }
-
-      const mimeType = asset.mimeType ?? "image/jpeg";
-      const filename = asset.fileName ?? `image_${Date.now()}.jpg`;
-
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        quality: 0.7,
+        base64: true,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      if (!asset.base64) return;
       sendClip({
-        type: "image",
+        type: 'image',
         content: asset.base64,
-        filename,
-        mimeType,
+        filename: asset.fileName ?? `image_${Date.now()}.jpg`,
+        mimeType: asset.mimeType ?? 'image/jpeg',
       });
     } catch (e) {
-      console.error("Image pick error:", e);
-      ToastAndroid.show("Failed to pick image", ToastAndroid.SHORT);
+      ToastAndroid.show('Failed to pick image', ToastAndroid.SHORT);
+    }
+  };
+
+  // Pick video from gallery
+  const handlePickVideo = async () => {
+    setShowAttachMenu(false);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        ToastAndroid.show('Permission denied', ToastAndroid.SHORT);
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'videos',
+        quality: 0.7,
+        base64: false,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      await sendFileAsClip(
+        asset.uri,
+        asset.fileName ?? `video_${Date.now()}.mp4`,
+        asset.mimeType ?? 'video/mp4',
+      );
+    } catch (e) {
+      ToastAndroid.show('Failed to pick video', ToastAndroid.SHORT);
+    }
+  };
+
+  // Pick any file (audio, PDF, doc, etc.)
+  const handlePickFile = async () => {
+    setShowAttachMenu(false);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      await sendFileAsClip(
+        asset.uri,
+        asset.name,
+        asset.mimeType ?? 'application/octet-stream',
+      );
+    } catch (e) {
+      ToastAndroid.show('Failed to pick file', ToastAndroid.SHORT);
     }
   };
 
@@ -125,11 +188,11 @@ export default function HomeScreen() {
         <View style={styles.inputBar}>
           <TouchableOpacity
             style={styles.mediaBtn}
-            onPress={handlePickImage}
+            onPress={() => setShowAttachMenu(true)}
             activeOpacity={0.7}
             disabled={!serverState.isRunning}
           >
-            <Text style={styles.mediaBtnText}>🖼</Text>
+            <Text style={styles.mediaBtnText}>+</Text>
           </TouchableOpacity>
           <TextInput
             style={styles.input}
@@ -154,6 +217,54 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Attach menu modal */}
+      <Modal
+        visible={showAttachMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAttachMenu(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowAttachMenu(false)}
+        >
+          <View style={styles.attachMenu}>
+            <Text style={styles.attachTitle}>Send attachment</Text>
+
+            <TouchableOpacity style={styles.attachOption} onPress={handlePickImage}>
+              <Text style={styles.attachOptionIcon}>🖼️</Text>
+              <View>
+                <Text style={styles.attachOptionLabel}>Image</Text>
+                <Text style={styles.attachOptionSub}>JPG, PNG, GIF, WEBP</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.attachOption} onPress={handlePickVideo}>
+              <Text style={styles.attachOptionIcon}>🎬</Text>
+              <View>
+                <Text style={styles.attachOptionLabel}>Video</Text>
+                <Text style={styles.attachOptionSub}>MP4, MOV, AVI</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.attachOption} onPress={handlePickFile}>
+              <Text style={styles.attachOptionIcon}>📎</Text>
+              <View>
+                <Text style={styles.attachOptionLabel}>File</Text>
+                <Text style={styles.attachOptionSub}>Audio, PDF, DOC, and more</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.attachCancel}
+              onPress={() => setShowAttachMenu(false)}
+            >
+              <Text style={styles.attachCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -227,7 +338,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     backgroundColor: '#1a1a1a',
-    borderRadius: 10,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#2a2a2a',
     alignItems: 'center',
@@ -236,6 +347,8 @@ const styles = StyleSheet.create({
   },
   mediaBtnText: {
     fontSize: 20,
+    color: '#e8e8e8',
+    lineHeight: 20,
   },
   input: {
     flex: 1,
@@ -264,5 +377,56 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#0f0f0f',
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  attachMenu: {
+    backgroundColor: '#161616',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  attachTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  attachOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e1e1e',
+  },
+  attachOptionIcon: { fontSize: 24 },
+  attachOptionLabel: {
+    fontSize: 16,
+    color: '#e8e8e8',
+    fontWeight: '500',
+  },
+  attachOptionSub: {
+    fontSize: 12,
+    color: '#555',
+    marginTop: 2,
+  },
+  attachCancel: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 4,
+  },
+  attachCancelText: {
+    fontSize: 15,
+    color: '#666',
   },
 });
