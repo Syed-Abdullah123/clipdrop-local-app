@@ -12,6 +12,8 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard';
 // import * as FileSystem from 'expo-file-system';
 import { ClipItem } from '../types';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import {
   cacheDirectory,
   writeAsStringAsync,
@@ -35,48 +37,110 @@ function getBadgeStyle(type: ClipItem['type']) {
     case 'text':  return { bg: '#1e2a3a', fg: '#60a5fa' };
     case 'link':  return { bg: '#1a2e1a', fg: '#4ade80' };
     case 'image': return { bg: '#2a1e2e', fg: '#c084fc' };
+    case 'video': return { bg: '#1e2a1e', fg: '#86efac' };
+    case 'audio': return { bg: '#2a1e1e', fg: '#fca5a5' };
     case 'file':  return { bg: '#2a2a1e', fg: '#facc15' };
     default:      return { bg: '#1e1e1e', fg: '#888' };
   }
 }
 
-// Saves base64 image to a temp file and returns a file:// URI
-function useImageURI(item: ClipItem): string | null {
+// Writes base64 content to cache and returns a file:// URI
+function useCachedFileURI(item: ClipItem): string | null {
   const [uri, setUri] = useState<string | null>(null);
 
   useEffect(() => {
-    if (item.type !== 'image' || !item.content) return;
+    if (!item.content || item.type === 'text' || item.type === 'link') return;
 
-    const ext = item.mimeType?.split('/')[1] ?? 'jpg';
+    const ext = item.mimeType?.split('/')[1]?.split(';')[0] ?? 'bin';
     const path = `${cacheDirectory}clip_${item.id}.${ext}`;
 
-    writeAsStringAsync(path, item.content, {
-      encoding: EncodingType.Base64,
-    })
+    writeAsStringAsync(path, item.content, { encoding: EncodingType.Base64 })
       .then(() => setUri(path))
-      .catch((e) => console.error('Failed to write image:', e));
+      .catch((e) => console.error('Failed to write file:', e));
   }, [item.id]);
 
   return uri;
 }
 
+// --- Image ---
 function ImageClip({ item }: { item: ClipItem }) {
-  const uri = useImageURI(item);
+  const uri = useCachedFileURI(item);
+  if (!uri) return (
+    <View style={styles.mediaPlaceholder}>
+      <Text style={styles.placeholderText}>Loading image...</Text>
+    </View>
+  );
+  return <Image source={{ uri }} style={styles.image} resizeMode="contain" />;
+}
 
-  if (!uri) {
-    return (
-      <View style={styles.imagePlaceholder}>
-        <Text style={styles.imagePlaceholderText}>Loading image...</Text>
-      </View>
-    );
-  }
+// --- Video ---
+function VideoClip({ item }: { item: ClipItem }) {
+  const uri = useCachedFileURI(item);
+  const player = useVideoPlayer(uri ?? '', (p) => {
+    p.loop = false;
+  });
+
+  if (!uri) return (
+    <View style={styles.mediaPlaceholder}>
+      <Text style={styles.placeholderText}>Loading video...</Text>
+    </View>
+  );
 
   return (
-    <Image
-      source={{ uri }}
-      style={styles.image}
-      resizeMode="contain"
+    <VideoView
+      player={player}
+      style={styles.video}
+      allowsFullscreen
+      allowsPictureInPicture={false}
     />
+  );
+}
+
+// --- Audio ---
+function AudioClip({ item }: { item: ClipItem }) {
+  const uri = useCachedFileURI(item);
+
+  // Always call hook at top level
+  const player = useAudioPlayer(uri ? { uri } : undefined);
+  const status = useAudioPlayerStatus(player);
+
+  const isLoaded = !!player && !!uri;
+  const isPlaying = !!status?.playing;
+
+  const togglePlay = () => {
+    if (!player) return;
+
+    if (isPlaying) {
+      player.pause();
+    } else {
+      // if already finished, remove and create a new one
+      try { player.remove(); } catch {}
+      player.play();
+    }
+  };
+
+  useEffect(() => {
+    // cleanup on unmount
+    return () => {
+      try { player?.remove(); } catch {}
+    };
+  }, [player]);
+
+  return (
+    <View style={styles.audioCard}>
+      <Text style={styles.audioFilename} numberOfLines={1}>
+        🎵 {item.filename ?? 'Audio file'}
+      </Text>
+      <TouchableOpacity
+        onPress={togglePlay}
+        disabled={!isLoaded}
+        style={[styles.playBtn, !isLoaded && styles.playBtnDisabled]}
+      >
+        <Text style={styles.playBtnText}>
+          {!isLoaded ? 'Loading...' : isPlaying ? '⏸ Pause' : '▶ Play'}
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -94,6 +158,8 @@ function ClipItemCard({ item }: { item: ClipItem }) {
     if (item.type === 'link') Linking.openURL(item.content);
   };
 
+  const showCopyBtn = item.type === 'text' || item.type === 'link';
+
   return (
     <View style={[styles.card, isSent ? styles.cardSent : styles.cardReceived]}>
       {/* Header row */}
@@ -110,35 +176,26 @@ function ClipItemCard({ item }: { item: ClipItem }) {
       </View>
 
       {/* Content */}
-      {item.type === 'image' && item.content ? (
-        // <ImageClip item={item} />
-        <Image
-          source={{ uri: `data:${item.mimeType};base64,${item.content}` }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      ) : item.type === 'link' ? (
+      {item.type === 'image' && <ImageClip item={item} />}
+      {item.type === 'video' && <VideoClip item={item} />}
+      {item.type === 'audio' && <AudioClip item={item} />}
+      {item.type === 'file' && (
+        <Text style={styles.contentText}>📎 {item.filename ?? 'File'}</Text>
+      )}
+      {item.type === 'link' && (
         <TouchableOpacity onPress={handleLinkPress} activeOpacity={0.7}>
-          <Text style={styles.linkText} numberOfLines={3}>
-            {item.content}
-          </Text>
+          <Text style={styles.linkText} numberOfLines={3}>{item.content}</Text>
         </TouchableOpacity>
-      ) : item.type === 'file' ? (
-        <Text style={styles.contentText}>
-          📎 {item.filename || 'File'}
-        </Text>
-      ) : (
-        <Text style={styles.contentText} selectable>
-          {item.content}
-        </Text>
+      )}
+      {item.type === 'text' && (
+        <Text style={styles.contentText} selectable>{item.content}</Text>
       )}
 
-      {/* Copy button (not for images) */}
-      {item.type !== 'image' && item.content ? (
+      {showCopyBtn && (
         <TouchableOpacity onPress={handleCopy} style={styles.copyBtn} activeOpacity={0.7}>
           <Text style={styles.copyBtnText}>Copy</Text>
         </TouchableOpacity>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -272,6 +329,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#444',
   },
+  video: { width: '100%', height: 200, borderRadius: 8, backgroundColor: '#111' },
+  mediaPlaceholder: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: { fontSize: 13, color: '#444' },
+  audioCard: {
+    backgroundColor: '#111',
+    borderRadius: 8,
+    padding: 12,
+    gap: 10,
+  },
+  audioFilename: { fontSize: 13, color: '#aaa' },
+  playBtn: {
+    backgroundColor: '#222',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  playBtnDisabled: { opacity: 0.4 },
+  playBtnText: { fontSize: 13, color: '#e8e8e8', fontWeight: '500' },
   copyBtn: {
     alignSelf: 'flex-start',
     backgroundColor: '#222',
