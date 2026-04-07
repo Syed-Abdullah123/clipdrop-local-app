@@ -1,4 +1,4 @@
-export type ClipItemType = 'text' | 'link' | 'image' | 'file';
+export type ClipItemType = 'text' | 'link' | 'image' | 'video' | 'audio' | 'file';
 
 export type ClipDirection = 'received' | 'sent';
 
@@ -21,7 +21,7 @@ export interface ServerState {
 
 // WebSocket message shape — both phone and browser use this same structure
 export interface WSMessage {
-  type: 'text' | 'link' | 'image' | 'file' | 'ping' | 'pong';
+  type: 'text' | 'link' | 'image' | 'video' | 'audio' | 'file' | 'ping' | 'pong';
   content?: string;
   filename?: string;
   mimeType?: string;

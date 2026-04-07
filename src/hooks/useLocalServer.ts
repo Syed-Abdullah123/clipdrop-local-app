@@ -12,6 +12,8 @@ function detectType(msg: WSMessage): ClipItem['type'] {
   if (msg.type === 'image') return 'image';
   if (msg.type === 'file') return 'file';
   if (msg.type === 'link') return 'link';
+  if (msg.type === 'audio') return 'audio'; // ✅ ADD THIS
+  if (msg.type === 'video') return 'video'; // (optional but recommended)
   return 'text';
 }
 
@@ -42,12 +44,14 @@ export function useLocalServer() {
 
   // Called when browser sends something over WebSocket
   const handleIncomingMessage = useCallback((msg: WSMessage) => {
+    console.log("Message received via WS:", msg);
     if (msg.type === 'ping' || msg.type === 'pong') return;
     addClip(msg, 'received');
   }, [addClip]);
 
   // Called when browser sends a file over HTTP POST
   const handleFileReceived = useCallback((msg: WSMessage) => {
+    console.log("File received via HTTP:", msg);
     addClip(msg, 'received');
     // Also push it to any other connected WS clients
     sendToClients(msg);
