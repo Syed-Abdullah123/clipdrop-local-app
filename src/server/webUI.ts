@@ -264,7 +264,7 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       <div class="actions">
         <button id="send-btn" disabled>Send to Phone</button>
         <button id="file-btn">Attach Image / File</button>
-        <input type="file" id="file-input" accept="image/*,*/*" />
+        <input type="file" id="file-input" accept="*/*" />
       </div>
     </div>
 
@@ -355,8 +355,16 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       reader.onload = () => {
         const base64 = reader.result.split(',')[1];
         const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        const isAudio = file.type.startsWith('audio/');
+
+        let type = 'file';
+        if (isImage) type = 'image';
+        else if (isVideo) type = 'video';
+        else if (isAudio) type = 'audio';
+
         sendMessage({
-          type: isImage ? 'image' : 'file',
+          type,
           content: base64,
           filename: file.name,
           mimeType: file.type,
@@ -394,13 +402,23 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       let contentHTML = '';
 
       if (msg.type === 'image') {
-        contentHTML = \`<div class="clip-image"><img src="data:\${msg.mimeType};base64,\${msg.content}" alt="\${msg.filename || 'image'}"/></div>\`;
+        contentHTML = '<div class="clip-image"><img src="data:' + msg.mimeType + ';base64,' + msg.content + '" alt="' + (msg.filename || 'image') + '"/></div>';
+      } else if (msg.type === 'video') {
+        contentHTML =
+          '<video controls style="width:100%;max-height:300px;border-radius:6px;margin-top:4px;background:#000">' +
+            '<source src="data:' + msg.mimeType + ';base64,' + msg.content + '" type="' + msg.mimeType + '">' +
+          '</video>';
+      } else if (msg.type === 'audio') {
+        contentHTML =
+          '<audio controls style="width:100%;margin-top:4px">' +
+            '<source src="data:' + msg.mimeType + ';base64,' + msg.content + '" type="' + msg.mimeType + '">' +
+          '</audio>';
       } else if (msg.type === 'link') {
-        contentHTML = \`<div class="clip-content"><a href="\${msg.content}" target="_blank" rel="noopener">\${msg.content}</a></div>\`;
+        contentHTML = '<div class="clip-content"><a href="' + msg.content + '" target="_blank" rel="noopener">' + msg.content + '</a></div>';
       } else if (msg.type === 'file') {
-        contentHTML = \`<div class="clip-content">📎 \${msg.filename || 'File'}</div>\`;
+        contentHTML = '<div class="clip-content">📎 ' + (msg.filename || 'File') + '</div>';
       } else {
-        contentHTML = \`<div class="clip-content">\${msg.content}</div>\`;
+        contentHTML = '<div class="clip-content">' + msg.content + '</div>';
       }
 
       item.innerHTML = \`
