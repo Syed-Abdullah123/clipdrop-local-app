@@ -10,7 +10,8 @@ import {
   Linking,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
-// import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 import { ClipItem } from '../types';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -62,6 +63,42 @@ function useCachedFileURI(item: ClipItem): string | null {
   return uri;
 }
 
+// Save image/video to media library, share everything else
+async function saveOrShareFile(
+  uri: string,
+  type: ClipItem['type'],
+  filename: string,
+): Promise<void> {
+  try {
+    if (type === 'image' || type === 'video') {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        ToastAndroid.show('Storage permission denied', ToastAndroid.SHORT);
+        return;
+      }
+      await MediaLibrary.saveToLibraryAsync(uri);
+      ToastAndroid.show(
+        type === 'image' ? 'Image saved to gallery' : 'Video saved to gallery',
+        ToastAndroid.SHORT,
+      );
+    } else {
+      // For audio, PDF, docs — open share sheet
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, {
+          mimeType: type === 'audio' ? 'audio/*' : '*/*',
+          dialogTitle: `Save ${filename}`,
+        });
+      } else {
+        ToastAndroid.show('Sharing not available', ToastAndroid.SHORT);
+      }
+    }
+  } catch (e) {
+    console.error('Save error:', e);
+    ToastAndroid.show('Failed to save file', ToastAndroid.SHORT);
+  }
+}
+
 // --- Image ---
 function ImageClip({ item }: { item: ClipItem }) {
   const uri = useCachedFileURI(item);
@@ -70,7 +107,18 @@ function ImageClip({ item }: { item: ClipItem }) {
       <Text style={styles.placeholderText}>Loading image...</Text>
     </View>
   );
-  return <Image source={{ uri }} style={styles.image} resizeMode="contain" />;
+  return (
+    <View>
+      <Image source={{ uri }} style={styles.image} resizeMode="contain" />
+      <TouchableOpacity
+        style={styles.saveBtn}
+        onPress={() => saveOrShareFile(uri, 'image', item.filename ?? 'image')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.saveBtnText}>⬇ Save to gallery</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 // --- Video ---
@@ -87,12 +135,21 @@ function VideoClip({ item }: { item: ClipItem }) {
   );
 
   return (
-    <VideoView
-      player={player}
-      style={styles.video}
-      allowsFullscreen
-      allowsPictureInPicture={false}
-    />
+    <View>
+      <VideoView
+        player={player}
+        style={styles.video}
+        allowsFullscreen
+        allowsPictureInPicture={false}
+      />
+      <TouchableOpacity
+        style={styles.saveBtn}
+        onPress={() => saveOrShareFile(uri, 'video', item.filename ?? 'video')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.saveBtnText}>⬇ Save to gallery</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -106,6 +163,18 @@ function AudioClip({ item }: { item: ClipItem }) {
 
   const isLoaded = !!player && !!uri;
   const isPlaying = !!status?.playing;
+
+  // When track finishes, seek back to start so it can be replayed
+  useEffect(() => {
+    if (status && !status.playing && status.currentTime > 0) {
+      const duration = status.duration ?? 0;
+      const isFinished = duration > 0 && status.currentTime >= duration - 0.5;
+      if (isFinished) {
+        player?.seekTo(0);
+        player?.pause();
+      }
+    }
+  }, [status?.playing]);
 
   const togglePlay = () => {
     if (!player) return;
@@ -126,20 +195,137 @@ function AudioClip({ item }: { item: ClipItem }) {
     };
   }, [player]);
 
+  // Format seconds to m:ss
+  const formatDuration = (secs: number): string => {
+    if (!secs || isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const currentTime = status?.currentTime ?? 0;
+  const duration = status?.duration ?? 0;
+  const progress = duration > 0 ? currentTime / duration : 0;
+
   return (
     <View style={styles.audioCard}>
       <Text style={styles.audioFilename} numberOfLines={1}>
         🎵 {item.filename ?? 'Audio file'}
       </Text>
-      <TouchableOpacity
-        onPress={togglePlay}
-        disabled={!isLoaded}
-        style={[styles.playBtn, !isLoaded && styles.playBtnDisabled]}
-      >
-        <Text style={styles.playBtnText}>
-          {!isLoaded ? 'Loading...' : isPlaying ? '⏸ Pause' : '▶ Play'}
+
+      {/* Progress bar */}
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      </View>
+
+      {/* Time row + play button */}
+      <View style={styles.audioControls}>
+        <Text style={styles.audioTime}>
+          {formatDuration(currentTime)}
         </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={togglePlay}
+          disabled={!isLoaded}
+          style={[styles.playBtn, !isLoaded && styles.playBtnDisabled]}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.playBtnText}>
+            {!isLoaded ? 'Loading...' : isPlaying ? '⏸ Pause' : '▶ Play'}
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.audioTime}>
+          {formatDuration(duration)}
+        </Text>
+      </View>
+
+      {uri && (
+        <TouchableOpacity
+          style={styles.saveBtn}
+          onPress={() => saveOrShareFile(uri, 'audio', item.filename ?? 'audio')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.saveBtnText}>⬇ Save file</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// --- Generic file ---
+function FileClip({ item }: { item: ClipItem }) {
+  const uri = useCachedFileURI(item);
+
+  const getFileIcon = (mimeType?: string): string => {
+    if (!mimeType) return '📎';
+    if (mimeType.includes('pdf')) return '📄';
+    if (mimeType.includes('word') || mimeType.includes('doc')) return '📝';
+    if (mimeType.includes('sheet') || mimeType.includes('excel') || mimeType.includes('csv')) return '📊';
+    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) return '🗜️';
+    if (mimeType.includes('text')) return '📃';
+    return '📎';
+  };
+
+  function getReadableMimeType(mimeType?: string): string {
+    if (!mimeType) return 'Unknown file';
+
+    const map: Record<string, string> = {
+      'application/pdf': 'PDF Document',
+      'application/msword': 'Word Document',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+      'application/vnd.ms-excel': 'Excel Spreadsheet',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
+      'application/vnd.ms-powerpoint': 'PowerPoint Presentation',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint Presentation',
+      'application/zip': 'ZIP Archive',
+      'application/x-rar-compressed': 'RAR Archive',
+      'application/x-7z-compressed': '7-Zip Archive',
+      'application/json': 'JSON File',
+      'application/xml': 'XML File',
+      'application/octet-stream': 'Binary File',
+      'text/plain': 'Text File',
+      'text/html': 'HTML File',
+      'text/css': 'CSS File',
+      'text/csv': 'CSV Spreadsheet',
+      'text/javascript': 'JavaScript File',
+    };
+
+    if (map[mimeType]) return map[mimeType];
+
+    // Fallback: clean up the raw mime type
+    // e.g. "application/x-zip-compressed" → "Zip Compressed"
+    const [, subtype] = mimeType.split('/');
+    if (!subtype) return mimeType;
+
+    return subtype
+      .replace(/^x-/, '')
+      .replace(/[-_.+]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+  }
+
+  return (
+    <View style={styles.fileCard}>
+      <View style={styles.fileInfo}>
+        <Text style={styles.fileIcon}>{getFileIcon(item.mimeType)}</Text>
+        <View style={styles.fileDetails}>
+          <Text style={styles.fileFilename} numberOfLines={2}>
+            {item.filename ?? 'File'}
+          </Text>
+          <Text style={styles.fileMime}>{getReadableMimeType(item.mimeType)}</Text>
+        </View>
+      </View>
+      {uri && (
+        <TouchableOpacity
+          style={styles.saveBtn}
+          onPress={() => saveOrShareFile(uri, 'file', item.filename ?? 'file')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.saveBtnText}>⬇ Save / Open</Text>
+        </TouchableOpacity>
+      )}
+      {!uri && (
+        <Text style={styles.placeholderText}>Preparing file...</Text>
+      )}
     </View>
   );
 }
@@ -179,9 +365,7 @@ function ClipItemCard({ item }: { item: ClipItem }) {
       {item.type === 'image' && <ImageClip item={item} />}
       {item.type === 'video' && <VideoClip item={item} />}
       {item.type === 'audio' && <AudioClip item={item} />}
-      {item.type === 'file' && (
-        <Text style={styles.contentText}>📎 {item.filename ?? 'File'}</Text>
-      )}
+      {item.type === 'file'  && <FileClip item={item} />}
       {item.type === 'link' && (
         <TouchableOpacity onPress={handleLinkPress} activeOpacity={0.7}>
           <Text style={styles.linkText} numberOfLines={3}>{item.content}</Text>
@@ -346,6 +530,29 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   audioFilename: { fontSize: 13, color: '#aaa' },
+  progressTrack: {
+    width: '100%',
+    height: 3,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4ade80',
+    borderRadius: 2,
+  },
+  audioControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  audioTime: {
+    fontSize: 11,
+    color: '#555',
+    minWidth: 32,
+  },
   playBtn: {
     backgroundColor: '#222',
     borderRadius: 8,
@@ -357,6 +564,45 @@ const styles = StyleSheet.create({
   },
   playBtnDisabled: { opacity: 0.4 },
   playBtnText: { fontSize: 13, color: '#e8e8e8', fontWeight: '500' },
+  fileCard: {
+    backgroundColor: '#111',
+    borderRadius: 8,
+    padding: 12,
+    gap: 10,
+  },
+  fileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  fileIcon: { fontSize: 32 },
+  fileDetails: { flex: 1 },
+  fileFilename: {
+    fontSize: 14,
+    color: '#e8e8e8',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  fileMime: {
+    fontSize: 11,
+    color: '#555',
+    marginTop: 2,
+  },
+  saveBtn: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    marginTop: 12,
+  },
+  saveBtnText: {
+    fontSize: 13,
+    color: '#4ade80',
+    fontWeight: '500',
+  },
   copyBtn: {
     alignSelf: 'flex-start',
     backgroundColor: '#222',
