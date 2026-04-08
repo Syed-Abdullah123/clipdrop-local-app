@@ -34,6 +34,14 @@
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow ClipDrop Local to save images and videos to your gallery.",
+          "savePhotosPermission": "Allow ClipDrop Local to save photos to your gallery.",
+          "isAccessMediaLocationEnabled": true
+        }
       ]
     ]
   }

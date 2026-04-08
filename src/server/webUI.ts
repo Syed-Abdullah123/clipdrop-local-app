@@ -247,6 +247,24 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     }
 
     #drop-overlay.visible { display: flex; }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 6px 14px;
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 7px;
+      color: #4ade80;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .download-btn:hover { background: #252525; }
   </style>
 </head>
 <body>
@@ -400,36 +418,72 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       const dirLabel = direction === 'sent' ? '↑ To phone' : '↓ From phone';
 
       let contentHTML = '';
+      let downloadHTML = '';
 
       if (msg.type === 'image') {
-        contentHTML = '<div class="clip-image"><img src="data:' + msg.mimeType + ';base64,' + msg.content + '" alt="' + (msg.filename || 'image') + '"/></div>';
+        const src = 'data:' + msg.mimeType + ';base64,' + msg.content;
+        contentHTML = '<div class="clip-image"><img src="' + src + '" alt="' + (msg.filename || 'image') + '"/></div>';
+        downloadHTML = '<a class="download-btn" href="' + src + '" download="' + (msg.filename || 'image') + '">⬇ Download image</a>';
       } else if (msg.type === 'video') {
+        const src = 'data:' + msg.mimeType + ';base64,' + msg.content;
         contentHTML =
           '<video controls style="width:100%;max-height:300px;border-radius:6px;margin-top:4px;background:#000">' +
-            '<source src="data:' + msg.mimeType + ';base64,' + msg.content + '" type="' + msg.mimeType + '">' +
+            '<source src="' + src + '" type="' + msg.mimeType + '">' +
           '</video>';
+        downloadHTML = '<a class="download-btn" href="' + src + '" download="' + (msg.filename || 'video') + '">⬇ Download video</a>';
       } else if (msg.type === 'audio') {
+        const src = 'data:' + msg.mimeType + ';base64,' + msg.content;
         contentHTML =
           '<audio controls style="width:100%;margin-top:4px">' +
-            '<source src="data:' + msg.mimeType + ';base64,' + msg.content + '" type="' + msg.mimeType + '">' +
+            '<source src="' + src + '" type="' + msg.mimeType + '">' +
           '</audio>';
+        downloadHTML = '<a class="download-btn" href="' + src + '" download="' + (msg.filename || 'audio') + '">⬇ Download audio</a>';
+      } else if (msg.type === 'file') {
+        const src = 'data:' + (msg.mimeType || 'application/octet-stream') + ';base64,' + msg.content;
+        contentHTML = '<div class="clip-content">📎 ' + (msg.filename || 'File') + '</div>';
+        downloadHTML = '<a class="download-btn" href="' + src + '" download="' + (msg.filename || 'file') + '">⬇ Download file</a>';
       } else if (msg.type === 'link') {
         contentHTML = '<div class="clip-content"><a href="' + msg.content + '" target="_blank" rel="noopener">' + msg.content + '</a></div>';
-      } else if (msg.type === 'file') {
-        contentHTML = '<div class="clip-content">📎 ' + (msg.filename || 'File') + '</div>';
       } else {
         contentHTML = '<div class="clip-content">' + msg.content + '</div>';
       }
 
-      item.innerHTML = \`
-        <div class="clip-meta">
-          <span class="clip-badge badge-\${msg.type}">\${msg.type}</span>
-          <span class="clip-direction">\${dirLabel}</span>
-          <span class="clip-time">\${time}</span>
-        </div>
-        \${contentHTML}
-        \${msg.type !== 'image' ? '<button class="copy-btn" onclick="copyContent(this, \`' + (msg.content || '') + '\`)">Copy</button>' : ''}
-      \`;
+      const showCopy = msg.type === 'text' || msg.type === 'link';
+
+      item.innerHTML =
+        '<div class="clip-meta">' +
+          '<span class="clip-badge badge-' + msg.type + '">' + msg.type + '</span>' +
+          '<span class="clip-direction">' + dirLabel + '</span>' +
+          '<span class="clip-time">' + time + '</span>' +
+        '</div>' +
+        contentHTML +
+        downloadHTML +
+        (showCopy ? '<button class="copy-btn">Copy</button>' : '');
+
+      if (showCopy) {
+        const copyBtn = item.querySelector('.copy-btn');
+        const contentToCopy = msg.content || '';
+        copyBtn.addEventListener('click', function() {
+          const ta = document.createElement('textarea');
+          ta.value = contentToCopy;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          ta.style.top = '-9999px';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          const success = document.execCommand('copy');
+          document.body.removeChild(ta);
+          if (success) {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+          } else {
+            copyBtn.textContent = 'Failed';
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+          }
+        });
+      }
 
       clipFeed.prepend(item);
     }
