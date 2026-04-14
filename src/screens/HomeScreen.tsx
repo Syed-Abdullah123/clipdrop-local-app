@@ -11,7 +11,8 @@ import {
   ToastAndroid,
   Modal,
   Pressable,
-  Keyboard
+  Keyboard,
+  ActivityIndicator
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -31,9 +32,11 @@ function isLink(text: string): boolean {
 }
 
 export default function HomeScreen() {
-  const { serverState, clips, sendClip, clearClips } = useLocalServer();
+  const { serverState, clips, sendClip, clearClips, addPendingClip, updateClip } = useLocalServer();
   const [inputText, setInputText] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendingLabel, setSendingLabel] = useState('');
 
   const handleSend = () => {
     const text = inputText.trim();
@@ -47,66 +50,94 @@ export default function HomeScreen() {
     setInputText('');
   };
 
-  // Read any file URI to base64 and send it
   const sendFileAsClip = async (
     uri: string,
     filename: string,
     mimeType: string,
   ) => {
+    let type: 'image' | 'video' | 'audio' | 'file' = 'file';
+    if (mimeType.startsWith('image/')) type = 'image';
+    else if (mimeType.startsWith('video/')) type = 'video';
+    else if (mimeType.startsWith('audio/')) type = 'audio';
+
+    // Add pending placeholder immediately so user sees it in feed
+    const pendingId = addPendingClip(type, 'sent', filename, mimeType);
+    setIsSending(true);
+    setSendingLabel(`Reading ${filename}...`);
+
     try {
-      const base64 = await readAsStringAsync(uri, {
-        encoding: EncodingType.Base64,
-      });
+      const base64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
 
-      let type: 'image' | 'video' | 'audio' | 'file' = 'file';
-      if (mimeType.startsWith('image/')) type = 'image';
-      else if (mimeType.startsWith('video/')) type = 'video';
-      else if (mimeType.startsWith('audio/')) type = 'audio';
+      setSendingLabel(`Sending ${filename}...`);
 
-      sendClip({ type, content: base64, filename, mimeType });
+      const { sendToClients } = await import('../server/wsServer');
+      const id = pendingId;
+      const msg = { type, content: base64, filename, mimeType, id };
+
+      // Send over WebSocket
+      sendToClients(msg);
+
+      // Update the pending clip to ready
+      updateClip(pendingId, base64);
     } catch (e) {
       console.error('File read error:', e);
-      ToastAndroid.show('Failed to read file', ToastAndroid.SHORT);
+      ToastAndroid.show('Failed to send file', ToastAndroid.SHORT);
+      // Remove the pending clip on failure
+      updateClip(pendingId, '');
+    } finally {
+      setIsSending(false);
+      setSendingLabel('');
     }
   };
 
-  // Pick image from gallery
   const handlePickImage = async () => {
     setShowAttachMenu(false);
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        ToastAndroid.show('Permission denied', ToastAndroid.SHORT);
-        return;
-      }
+      if (!permission.granted) { ToastAndroid.show('Permission denied', ToastAndroid.SHORT); return; }
+
+      const pendingId = addPendingClip('image', 'sent');
+      setIsSending(true);
+      setSendingLabel('Reading image...');
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: 'images',
         quality: 0.7,
         base64: true,
       });
-      if (result.canceled || !result.assets[0]) return;
+
+      if (result.canceled || !result.assets[0] || !result.assets[0].base64) {
+        updateClip(pendingId, '');
+        setIsSending(false);
+        return;
+      }
+
       const asset = result.assets[0];
-      if (!asset.base64) return;
-      sendClip({
-        type: 'image',
-        content: asset.base64,
+      setSendingLabel('Sending image...');
+
+      const { sendToClients } = await import('../server/wsServer');
+      const msg = {
+        type: 'image' as const,
+        content: asset.base64!,
         filename: asset.fileName ?? `image_${Date.now()}.jpg`,
         mimeType: asset.mimeType ?? 'image/jpeg',
-      });
+        id: pendingId,
+      };
+      sendToClients(msg);
+      updateClip(pendingId, asset.base64!);
     } catch (e) {
       ToastAndroid.show('Failed to pick image', ToastAndroid.SHORT);
+    } finally {
+      setIsSending(false);
+      setSendingLabel('');
     }
   };
 
-  // Pick video from gallery
   const handlePickVideo = async () => {
     setShowAttachMenu(false);
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        ToastAndroid.show('Permission denied', ToastAndroid.SHORT);
-        return;
-      }
+      if (!permission.granted) { ToastAndroid.show('Permission denied', ToastAndroid.SHORT); return; }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: 'videos',
         quality: 0.7,
@@ -217,6 +248,17 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Sending overlay */}
+      <Modal visible={isSending} transparent animationType="fade">
+        <View style={styles.sendingOverlay}>
+          <View style={styles.sendingCard}>
+            <ActivityIndicator size="large" color="#4ade80" />
+            <Text style={styles.sendingLabel}>{sendingLabel}</Text>
+            <Text style={styles.sendingHint}>Please wait...</Text>
+          </View>
+        </View>
+      </Modal>
 
       {/* Attach menu modal */}
       <Modal
@@ -378,6 +420,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0f0f0f',
   },
+  // Sending overlay
+  sendingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendingCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    gap: 16,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    minWidth: 220,
+  },
+  sendingLabel: { fontSize: 15, color: '#e8e8e8', fontWeight: '500', textAlign: 'center' },
+  sendingHint: { fontSize: 12, color: '#555' },
   // Modal
   modalOverlay: {
     flex: 1,
