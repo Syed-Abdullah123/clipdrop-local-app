@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { NetworkInfo } from 'react-native-network-info';
 import { startHTTPServer, stopHTTPServer, HTTP_PORT, WS_PORT } from '../server/httpServer';
 import { startWSServer, stopWSServer, sendToClients } from '../server/wsServer';
-import { ClipItem, ServerState, WSMessage } from '../types';
+import { ClipItem, ClipStatus, ServerState, WSMessage } from '../types';
 
 function generateId(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -29,11 +29,12 @@ export function useLocalServer() {
   const isStarted = useRef(false);
 
   // Add a clip item to the list
-  const addClip = useCallback((msg: WSMessage, direction: ClipItem['direction']) => {
+  const addClip = useCallback((msg: WSMessage, direction: ClipItem['direction'], status: ClipStatus = 'ready') => {
     const item: ClipItem = {
       id: msg.id || generateId(),
       type: detectType(msg),
       direction,
+      status,
       content: msg.content ?? '',
       filename: msg.filename,
       mimeType: msg.mimeType,
@@ -42,11 +43,70 @@ export function useLocalServer() {
     setClips((prev) => [item, ...prev]);
   }, []);
 
+  // Add a placeholder pending clip and return its id
+  const addPendingClip = useCallback((
+    type: ClipItem['type'],
+    direction: ClipItem['direction'],
+    filename?: string,
+    mimeType?: string,
+  ): string => {
+    const id = generateId();
+    const item: ClipItem = {
+      id,
+      type,
+      direction,
+      status: 'pending',
+      content: '',
+      filename,
+      mimeType,
+      timestamp: Date.now(),
+    };
+    setClips((prev) => [item, ...prev]);
+    return id;
+  }, []);
+
+  // Upgrade a pending clip to ready with full content
+  const updateClip = useCallback((id: string, content: string) => {
+    setClips((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, content, status: 'ready' as ClipStatus } : c
+      )
+    );
+  }, []);
+
   // Called when browser sends something over WebSocket
+  // const handleIncomingMessage = useCallback((msg: WSMessage) => {
+  //   if (msg.type === 'ping' || msg.type === 'pong') return;
+  //   addClip(msg, 'received');
+  // }, [addClip]);
+
   const handleIncomingMessage = useCallback((msg: WSMessage) => {
     if (msg.type === 'ping' || msg.type === 'pong') return;
-    addClip(msg, 'received');
-  }, [addClip]);
+
+    setClips((prev) => {
+      const existing = prev.find(c => c.id === msg.id);
+      if (existing) {
+        // Upgrade pending → ready
+        return prev.map(c =>
+          c.id === msg.id
+            ? { ...c, content: msg.content ?? '', status: 'ready' as const }
+            : c
+        );
+      }
+      // New message with no prior pending card
+      const item: ClipItem = {
+        id: msg.id,
+        type: detectType(msg),
+        direction: 'received',
+        status: 'ready',
+        content: msg.content ?? '',
+        filename: msg.filename,
+        mimeType: msg.mimeType,
+        timestamp: Date.now(),
+      };
+      return [item, ...prev];
+    });
+  }, []);
 
   // Called when browser sends a file over HTTP POST
   const handleFileReceived = useCallback((msg: WSMessage) => {
@@ -58,6 +118,45 @@ export function useLocalServer() {
   // Update connected client count
   const handleClientCount = useCallback((count: number) => {
     setServerState((prev) => ({ ...prev, connectedClients: count }));
+  }, []);
+
+  const handleProgress = useCallback((
+    id: string,
+    type: string,
+    filename?: string,
+    mimeType?: string,
+    bytesReceived?: number,
+    totalBytes?: number,
+  ) => {
+    setClips((prev) => {
+      const existing = prev.find(c => c.id === id);
+    
+      if (existing) {
+        // Update progress on existing pending card
+        if (bytesReceived !== undefined) {
+          return prev.map(c =>
+            c.id === id
+              ? { ...c, progress: Math.min(95, Math.round((bytesReceived / 1_000_000) * 10)) }
+              : c
+          );
+        }
+        return prev;
+      }
+    
+      // First notification — create the pending card
+      const item: ClipItem = {
+        id,
+        type: type as ClipItem['type'],
+        direction: 'received',
+        status: 'pending',
+        content: '',
+        filename,
+        mimeType,
+        timestamp: Date.now(),
+        progress: 0,
+      };
+      return [item, ...prev];
+    });
   }, []);
 
   // Start both servers
@@ -88,7 +187,7 @@ export function useLocalServer() {
       const ip = await pickLocalIP();
 
       startHTTPServer(handleFileReceived);
-      startWSServer(WS_PORT, handleIncomingMessage, handleClientCount);
+      startWSServer(WS_PORT, handleIncomingMessage, handleClientCount, handleProgress);
 
       setServerState({
         isRunning: true,
@@ -139,5 +238,7 @@ export function useLocalServer() {
     clearClips,
     startServer,
     stopServer,
+    addPendingClip,
+    updateClip,
   };
 }
