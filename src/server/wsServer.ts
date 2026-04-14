@@ -108,9 +108,11 @@ function parseWSFrames(buffer: Buffer, fragmentBuffer: Buffer | null): {
   messages: string[];
   remaining: Buffer;
   fragmentBuffer: Buffer | null
+  startedFragment: boolean;
 } {
   const messages: string[] = [];
   let offset = 0;
+  let startedFragment = false;
 
   // Accumulate fragmented message fragments
   // let fragmentBuffer: Buffer | null = null;
@@ -169,6 +171,7 @@ function parseWSFrames(buffer: Buffer, fragmentBuffer: Buffer | null): {
       } else {
         // First fragment of a multi-frame message
         fragmentBuffer = payload;
+        startedFragment = true;
       }
     } else if (opcode === 0x0) {
       // Continuation frame
@@ -186,7 +189,7 @@ function parseWSFrames(buffer: Buffer, fragmentBuffer: Buffer | null): {
     offset += totalLen;
   }
 
-  return { messages, remaining: buffer.slice(offset), fragmentBuffer };
+  return { messages, remaining: buffer.slice(offset), fragmentBuffer, startedFragment };
 }
 
 // --- WS Server ---
@@ -200,6 +203,7 @@ interface WSClient {
   handshakeDone: boolean;
   buffer: Buffer;
   fragmentBuffer: Buffer | null;
+  pendingMsgId: string | null;  // tracks in-progress fragmented message
 }
 
 let server: any = null;
@@ -237,10 +241,20 @@ function handleHandshake(client: WSClient, data: Buffer): boolean {
   return true;
 }
 
+export type WSProgressHandler = (
+  id: string,
+  type: string,
+  filename?: string,
+  mimeType?: string,
+  bytesReceived?: number,
+  totalBytes?: number,
+) => void;
+
 export function startWSServer(
   port: number,
   onMessage: WSMessageHandler,
   onClientCount: ClientCountHandler,
+  onProgress?: WSProgressHandler,
 ): void {
   messageHandler = onMessage;
   clientCountHandler = onClientCount;
@@ -253,17 +267,18 @@ export function startWSServer(
       handshakeDone: false,
       buffer: Buffer.alloc(0),
       fragmentBuffer: null,
+      pendingMsgId: null, 
     };
 
     clients.set(clientId, client);
     clientCountHandler?.(clients.size);
 
-    socket.on("data", (data: Buffer) => {
+    socket.on('data', (data: Buffer) => {
       client.buffer = Buffer.concat([client.buffer, data]);
 
       if (!client.handshakeDone) {
-        const bufStr = client.buffer.toString("utf8");
-        if (bufStr.includes("\r\n\r\n")) {
+        const bufStr = client.buffer.toString('utf8');
+        if (bufStr.includes('\r\n\r\n')) {
           const success = handleHandshake(client, client.buffer);
           if (success) {
             client.handshakeDone = true;
@@ -275,26 +290,60 @@ export function startWSServer(
         }
         return;
       }
-
-      // Use remaining buffer so partial frames aren't lost
-      const {
-        messages,
-        remaining,
-        fragmentBuffer: newFragmentBuffer,
-      } = parseWSFrames(client.buffer, client.fragmentBuffer);
-      
+    
+      const { messages, remaining, fragmentBuffer: newFragmentBuffer, startedFragment } =
+        parseWSFrames(client.buffer, client.fragmentBuffer);
+    
       client.buffer = remaining;
       client.fragmentBuffer = newFragmentBuffer;
 
+      // Report fragment accumulation progress to UI
+      if (client.pendingMsgId && newFragmentBuffer) {
+        onProgress?.(
+          client.pendingMsgId,
+          '',
+          undefined,
+          undefined,
+          newFragmentBuffer.length,
+          undefined,
+        );
+      }
+    
+      // A new fragmented message just started — notify so UI can show pending card
+      if (startedFragment && !client.pendingMsgId) {
+        try {
+          // Peek at the first bytes to extract id/type/filename from partial JSON
+          const partial = newFragmentBuffer?.toString('utf8') ?? '';
+          const idMatch = partial.match(/"id"\s*:\s*"([^"]+)"/);
+          const typeMatch = partial.match(/"type"\s*:\s*"([^"]+)"/);
+          const filenameMatch = partial.match(/"filename"\s*:\s*"([^"]+)"/);
+          const mimeMatch = partial.match(/"mimeType"\s*:\s*"([^"]+)"/);
+        
+          if (idMatch && typeMatch) {
+            client.pendingMsgId = idMatch[1];
+            onProgress?.(
+              idMatch[1],
+              typeMatch[1],
+              filenameMatch?.[1],
+              mimeMatch?.[1],
+            );
+          }
+        } catch {}
+      }
+    
+      // If fragment completed, clear pending tracking
+      if (client.pendingMsgId && messages.length > 0) {
+        client.pendingMsgId = null;
+      }
+    
       messages.forEach((msg) => {
-        if (msg === "__CLOSE__") {
+        if (msg === '__CLOSE__') {
           socket.destroy();
           return;
         }
         try {
           const parsed: WSMessage = JSON.parse(msg);
-          if (parsed.type === "pong") return;
-
+          if (parsed.type === 'pong') return;
           broadcastToClients(parsed, clientId);
           messageHandler?.(parsed);
         } catch (e) {}
