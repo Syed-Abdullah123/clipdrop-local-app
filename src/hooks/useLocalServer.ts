@@ -12,8 +12,8 @@ function detectType(msg: WSMessage): ClipItem['type'] {
   if (msg.type === 'image') return 'image';
   if (msg.type === 'file') return 'file';
   if (msg.type === 'link') return 'link';
-  if (msg.type === 'audio') return 'audio'; // ✅ ADD THIS
-  if (msg.type === 'video') return 'video'; // (optional but recommended)
+  if (msg.type === 'audio') return 'audio';
+  if (msg.type === 'video') return 'video';
   return 'text';
 }
 
@@ -27,6 +27,8 @@ export function useLocalServer() {
 
   const [clips, setClips] = useState<ClipItem[]>([]);
   const isStarted = useRef(false);
+  const progressTotalsRef = useRef<Map<string, number>>(new Map());
+  const progressReceivedRef = useRef<Map<string, number>>(new Map());
 
   // Add a clip item to the list
   const addClip = useCallback((msg: WSMessage, direction: ClipItem['direction'], status: ClipStatus = 'ready') => {
@@ -74,26 +76,22 @@ export function useLocalServer() {
     );
   }, []);
 
-  // Called when browser sends something over WebSocket
-  // const handleIncomingMessage = useCallback((msg: WSMessage) => {
-  //   if (msg.type === 'ping' || msg.type === 'pong') return;
-  //   addClip(msg, 'received');
-  // }, [addClip]);
-
   const handleIncomingMessage = useCallback((msg: WSMessage) => {
     if (msg.type === 'ping' || msg.type === 'pong') return;
+
+    // Clean up progress tracking refs
+    progressReceivedRef.current.delete(msg.id);
+    progressTotalsRef.current.delete(msg.id);
 
     setClips((prev) => {
       const existing = prev.find(c => c.id === msg.id);
       if (existing) {
-        // Upgrade pending → ready
         return prev.map(c =>
           c.id === msg.id
-            ? { ...c, content: msg.content ?? '', status: 'ready' as const }
+            ? { ...c, content: msg.content ?? '', status: 'ready' as const, progress: 100 }
             : c
         );
       }
-      // New message with no prior pending card
       const item: ClipItem = {
         id: msg.id,
         type: detectType(msg),
@@ -103,6 +101,7 @@ export function useLocalServer() {
         filename: msg.filename,
         mimeType: msg.mimeType,
         timestamp: Date.now(),
+        progress: 100,
       };
       return [item, ...prev];
     });
@@ -119,7 +118,7 @@ export function useLocalServer() {
   const handleClientCount = useCallback((count: number) => {
     setServerState((prev) => ({ ...prev, connectedClients: count }));
   }, []);
-
+  
   const handleProgress = useCallback((
     id: string,
     type: string,
@@ -130,36 +129,66 @@ export function useLocalServer() {
   ) => {
     setClips((prev) => {
       const existing = prev.find(c => c.id === id);
-    
-      if (existing) {
-        // Update progress on existing pending card
-        if (bytesReceived !== undefined) {
-          return prev.map(c =>
-            c.id === id
-              ? { ...c, progress: Math.min(95, Math.round((bytesReceived / 1_000_000) * 10)) }
-              : c
-          );
-        }
-        return prev;
+
+      if (!existing) {
+        // First call — create pending card at 0%
+        progressReceivedRef.current.set(id, 0);
+        progressTotalsRef.current.set(id, 0);
+
+        const item: ClipItem = {
+          id,
+          type: type as ClipItem['type'],
+          direction: 'received',
+          status: 'pending',
+          content: '',
+          filename,
+          mimeType,
+          timestamp: Date.now(),
+          progress: 0,
+        };
+        return [item, ...prev];
       }
-    
-      // First notification — create the pending card
-      const item: ClipItem = {
-        id,
-        type: type as ClipItem['type'],
-        direction: 'received',
-        status: 'pending',
-        content: '',
-        filename,
-        mimeType,
-        timestamp: Date.now(),
-        progress: 0,
-      };
-      return [item, ...prev];
+
+      if (bytesReceived !== undefined && bytesReceived > 0) {
+        // Track the highest received value we've seen
+        const prevReceived = progressReceivedRef.current.get(id) ?? 0;
+        if (bytesReceived > prevReceived) {
+          progressReceivedRef.current.set(id, bytesReceived);
+        }
+
+        // Total keeps growing until fin frame — track the max we've seen
+        const prevTotal = progressTotalsRef.current.get(id) ?? 0;
+        const currentTotal = Math.max(prevTotal, totalBytes ?? 0, bytesReceived);
+        progressTotalsRef.current.set(id, currentTotal);
+
+        const currentReceived = progressReceivedRef.current.get(id) ?? 0;
+
+        // Calculate progress — cap at 90% until message fully delivered
+        let pct = 0;
+        if (currentTotal > 0) {
+          pct = Math.min(90, Math.round((currentReceived / currentTotal) * 100));
+        } else {
+          // No total known — use chunk count based estimate, slow increment
+          pct = Math.min(90, (existing.progress ?? 0) + 5);
+        }
+
+        if (pct === existing.progress) return prev; // no change, skip re-render
+
+        return prev.map(c =>
+          c.id === id ? { ...c, progress: pct } : c
+        );
+      }
+
+      return prev;
     });
   }, []);
 
-  // Start both servers
+  const updateClipProgress = useCallback((id: string, progress: number) => {
+    setClips((prev) =>
+      prev.map((c) => c.id === id ? { ...c, progress } : c)
+    );
+  }, []);
+  
   const startServer = useCallback(async () => {
     if (isStarted.current) return;
     isStarted.current = true;
@@ -240,5 +269,6 @@ export function useLocalServer() {
     stopServer,
     addPendingClip,
     updateClip,
+    updateClipProgress,
   };
 }
