@@ -336,6 +336,7 @@ function PendingCard({ item }: { item: ClipItem }) {
   const badge = getBadgeStyle(item.type);
   const isSent = item.direction === 'sent';
   const progress = item.progress ?? 0;
+  const showPct = progress > 0;
 
   return (
     <View style={[styles.card, isSent ? styles.cardSent : styles.cardReceived]}>
@@ -346,30 +347,15 @@ function PendingCard({ item }: { item: ClipItem }) {
           </Text>
         </View>
         <Text style={styles.direction}>{isSent ? '↑ Sending...' : '↓ Receiving...'}</Text>
+        {showPct && (
+          <Text style={styles.progressPct}>{progress}%</Text>
+        )}
       </View>
       {item.filename && (
         <Text style={styles.pendingFilename} numberOfLines={1}>
           {item.filename}
         </Text>
       )}
-      <View style={styles.pendingRow}>
-        <View style={styles.pendingTrack}>
-          <View style={[
-            styles.pendingFill,
-            isSent
-              ? styles.pendingFillSent
-              : styles.pendingFillReceived,
-            progress > 0
-              ? { width: `${progress}%` }
-              : styles.pendingFillIndeterminate,
-          ]} />
-        </View>
-        <ActivityIndicator
-          size="small"
-          color={isSent ? '#3b82f6' : '#4ade80'}
-          style={{ marginLeft: 8 }}
-        />
-      </View>
     </View>
   );
 }
@@ -526,6 +512,12 @@ const styles = StyleSheet.create({
   direction: {
     fontSize: 11,
     color: '#444',
+  },
+  progressPct: {
+    fontSize: 11,
+    color: '#4ade80',
+    marginLeft: 'auto',
+    fontWeight: '600',
   },
   time: {
     fontSize: 11,
