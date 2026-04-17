@@ -8,6 +8,7 @@ import {
   ToastAndroid,
   Image,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as MediaLibrary from 'expo-media-library';
@@ -330,6 +331,35 @@ function FileClip({ item }: { item: ClipItem }) {
   );
 }
 
+// Add this component
+function PendingCard({ item }: { item: ClipItem }) {
+  const badge = getBadgeStyle(item.type);
+  const isSent = item.direction === 'sent';
+  const progress = item.progress ?? 0;
+  const showPct = progress > 0;
+
+  return (
+    <View style={[styles.card, isSent ? styles.cardSent : styles.cardReceived]}>
+      <View style={styles.cardHeader}>
+        <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+          <Text style={[styles.badgeText, { color: badge.fg }]}>
+            {item.type.toUpperCase()}
+          </Text>
+        </View>
+        <Text style={styles.direction}>{isSent ? '↑ Sending...' : '↓ Receiving...'}</Text>
+        {showPct && (
+          <Text style={styles.progressPct}>{progress}%</Text>
+        )}
+      </View>
+      {item.filename && (
+        <Text style={styles.pendingFilename} numberOfLines={1}>
+          {item.filename}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 function ClipItemCard({ item }: { item: ClipItem }) {
   const badge = getBadgeStyle(item.type);
   const isSent = item.direction === 'sent';
@@ -345,6 +375,9 @@ function ClipItemCard({ item }: { item: ClipItem }) {
   };
 
   const showCopyBtn = item.type === 'text' || item.type === 'link';
+
+  // Show skeleton while pending
+  if (item.status === 'pending') return <PendingCard item={item} />;
 
   return (
     <View style={[styles.card, isSent ? styles.cardSent : styles.cardReceived]}>
@@ -479,6 +512,12 @@ const styles = StyleSheet.create({
   direction: {
     fontSize: 11,
     color: '#444',
+  },
+  progressPct: {
+    fontSize: 11,
+    color: '#4ade80',
+    marginLeft: 'auto',
+    fontWeight: '600',
   },
   time: {
     fontSize: 11,
@@ -632,5 +671,41 @@ const styles = StyleSheet.create({
     color: '#2a2a2a',
     textAlign: 'center',
     lineHeight: 18,
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  pendingText: {
+    fontSize: 13,
+    color: '#555',
+    fontStyle: 'italic',
+  },
+  pendingFilename: {
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 2,
+  },
+  pendingTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  pendingFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  pendingFillSent: {
+    backgroundColor: '#3b82f6',
+  },
+  pendingFillReceived: {
+    backgroundColor: '#4ade80',
+  },
+  pendingFillIndeterminate: {
+    width: '40%',
   },
 });

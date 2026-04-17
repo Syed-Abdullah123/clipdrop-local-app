@@ -40,77 +40,15 @@ function buildWSFrame(payload: string): Buffer {
   return Buffer.concat([header, data]);
 }
 
-// Parse incoming WebSocket frames (handles masking from browser clients)
-// function parseWSFrames(buffer: Buffer): {
-//   messages: string[];
-//   remaining: Buffer;
-// } {
-//   const messages: string[] = [];
-//   let offset = 0;
-
-//   while (offset < buffer.length) {
-//     if (offset + 2 > buffer.length) break;
-
-//     const byte1 = buffer[offset];
-//     const byte2 = buffer[offset + 1];
-//     const isMasked = (byte2 & 0x80) !== 0;
-//     let payloadLen = byte2 & 0x7f;
-//     let headerLen = 2;
-
-//     if (payloadLen === 126) {
-//       if (offset + 4 > buffer.length) break;
-//       payloadLen = buffer.readUInt16BE(offset + 2);
-//       headerLen = 4;
-//     } else if (payloadLen === 127) {
-//       if (offset + 10 > buffer.length) break;
-//       // Read as two 32-bit numbers since JS doesn't do 64-bit int
-//       const high = buffer.readUInt32BE(offset + 2);
-//       const low = buffer.readUInt32BE(offset + 6);
-//       payloadLen = high * 0x100000000 + low;
-//       headerLen = 10;
-//     }
-
-//     const maskLen = isMasked ? 4 : 0;
-//     const totalLen = headerLen + maskLen + payloadLen;
-
-//     // Don't have the full frame yet — wait for more data
-//     if (offset + totalLen > buffer.length) break;
-
-//     const maskKey = isMasked
-//       ? buffer.slice(offset + headerLen, offset + headerLen + 4)
-//       : null;
-
-//     const payload = Buffer.from(
-//       buffer.slice(offset + headerLen + maskLen, offset + totalLen),
-//     );
-
-//     if (maskKey) {
-//       for (let i = 0; i < payload.length; i++) {
-//         payload[i] ^= maskKey[i % 4];
-//       }
-//     }
-
-//     const opcode = byte1 & 0x0f;
-//     if (opcode === 0x8) {
-//       messages.push("__CLOSE__");
-//     } else if (opcode === 0x1 || opcode === 0x2) {
-//       messages.push(payload.toString("utf8"));
-//     }
-
-//     offset += totalLen;
-//   }
-
-//   // Return unprocessed remainder so it gets prepended to the next chunk
-//   return { messages, remaining: buffer.slice(offset) };
-// }
-
 function parseWSFrames(buffer: Buffer, fragmentBuffer: Buffer | null): {
   messages: string[];
   remaining: Buffer;
   fragmentBuffer: Buffer | null
+  startedFragment: boolean;
 } {
   const messages: string[] = [];
   let offset = 0;
+  let startedFragment = false;
 
   // Accumulate fragmented message fragments
   // let fragmentBuffer: Buffer | null = null;
@@ -169,6 +107,7 @@ function parseWSFrames(buffer: Buffer, fragmentBuffer: Buffer | null): {
       } else {
         // First fragment of a multi-frame message
         fragmentBuffer = payload;
+        startedFragment = true;
       }
     } else if (opcode === 0x0) {
       // Continuation frame
@@ -186,7 +125,7 @@ function parseWSFrames(buffer: Buffer, fragmentBuffer: Buffer | null): {
     offset += totalLen;
   }
 
-  return { messages, remaining: buffer.slice(offset), fragmentBuffer };
+  return { messages, remaining: buffer.slice(offset), fragmentBuffer, startedFragment };
 }
 
 // --- WS Server ---
@@ -200,6 +139,8 @@ interface WSClient {
   handshakeDone: boolean;
   buffer: Buffer;
   fragmentBuffer: Buffer | null;
+  pendingMsgId: string | null;  // tracks in-progress fragmented message
+  expectedTotalBytes: number;
 }
 
 let server: any = null;
@@ -237,10 +178,20 @@ function handleHandshake(client: WSClient, data: Buffer): boolean {
   return true;
 }
 
+export type WSProgressHandler = (
+  id: string,
+  type: string,
+  filename?: string,
+  mimeType?: string,
+  bytesReceived?: number,
+  totalBytes?: number,
+) => void;
+
 export function startWSServer(
   port: number,
   onMessage: WSMessageHandler,
   onClientCount: ClientCountHandler,
+  onProgress?: WSProgressHandler,
 ): void {
   messageHandler = onMessage;
   clientCountHandler = onClientCount;
@@ -253,17 +204,19 @@ export function startWSServer(
       handshakeDone: false,
       buffer: Buffer.alloc(0),
       fragmentBuffer: null,
+      pendingMsgId: null,
+      expectedTotalBytes: 0,
     };
 
     clients.set(clientId, client);
     clientCountHandler?.(clients.size);
 
-    socket.on("data", (data: Buffer) => {
+    socket.on('data', (data: Buffer) => {
       client.buffer = Buffer.concat([client.buffer, data]);
 
       if (!client.handshakeDone) {
-        const bufStr = client.buffer.toString("utf8");
-        if (bufStr.includes("\r\n\r\n")) {
+        const bufStr = client.buffer.toString('utf8');
+        if (bufStr.includes('\r\n\r\n')) {
           const success = handleHandshake(client, client.buffer);
           if (success) {
             client.handshakeDone = true;
@@ -275,26 +228,80 @@ export function startWSServer(
         }
         return;
       }
-
-      // Use remaining buffer so partial frames aren't lost
-      const {
-        messages,
-        remaining,
-        fragmentBuffer: newFragmentBuffer,
-      } = parseWSFrames(client.buffer, client.fragmentBuffer);
-      
+    
+      const { messages, remaining, fragmentBuffer: newFragmentBuffer, startedFragment } =
+        parseWSFrames(client.buffer, client.fragmentBuffer);
+    
       client.buffer = remaining;
       client.fragmentBuffer = newFragmentBuffer;
 
+      // Report fragment accumulation progress to UI
+      if (client.pendingMsgId && newFragmentBuffer) {
+        onProgress?.(
+          client.pendingMsgId,
+          '',
+          undefined,
+          undefined,
+          newFragmentBuffer.length,
+          undefined,
+        );
+      }
+
+      // A new fragmented message just started — notify so UI can show pending card
+      if (startedFragment && !client.pendingMsgId) {
+        try {
+          const partial = newFragmentBuffer?.toString('utf8') ?? '';
+          const idMatch       = partial.match(/"id"\s*:\s*"([^"]+)"/);
+          const typeMatch     = partial.match(/"type"\s*:\s*"([^"]+)"/);
+          const filenameMatch = partial.match(/"filename"\s*:\s*"([^"]+)"/);
+          const mimeMatch     = partial.match(/"mimeType"\s*:\s*"([^"]+)"/);
+        
+          if (idMatch && typeMatch) {
+            client.pendingMsgId = idMatch[1];
+            client.expectedTotalBytes = 0;
+          
+            // Try to estimate total from WebSocket frame header
+            // The first frame's payload length hint is in the buffer header
+            // Use buffer length as growing denominator — will be updated each chunk
+            onProgress?.(
+              idMatch[1],
+              typeMatch[1],
+              filenameMatch?.[1],
+              mimeMatch?.[1],
+              newFragmentBuffer?.length ?? 0,
+              0, // 0 means unknown total
+            );
+          }
+        } catch {}
+      }
+
+      // Report progress on every continuation chunk
+      if (client.pendingMsgId && newFragmentBuffer) {
+        const received = newFragmentBuffer.length;
+      
+        // Update running max — this grows with each chunk
+        if (received > client.expectedTotalBytes) {
+          client.expectedTotalBytes = received;
+        }
+      
+        onProgress?.(
+          client.pendingMsgId,
+          '',
+          undefined,
+          undefined,
+          received,
+          client.expectedTotalBytes,
+        );
+      }
+    
       messages.forEach((msg) => {
-        if (msg === "__CLOSE__") {
+        if (msg === '__CLOSE__') {
           socket.destroy();
           return;
         }
         try {
           const parsed: WSMessage = JSON.parse(msg);
-          if (parsed.type === "pong") return;
-
+          if (parsed.type === 'pong') return;
           broadcastToClients(parsed, clientId);
           messageHandler?.(parsed);
         } catch (e) {}

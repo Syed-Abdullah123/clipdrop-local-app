@@ -265,6 +265,47 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     }
 
     .download-btn:hover { background: #252525; }
+
+     #upload-progress {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 0 4px;
+    }
+
+    #upload-progress.visible { display: flex; }
+
+    .progress-label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 4px;
+      background: #1e1e1e;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #4ade80;
+      border-radius: 2px;
+      transition: width 0.1s ease;
+      width: 0%;
+    }
+
+    @keyframes indeterminate {
+      0%   { left: -40%; width: 40%; }
+      100% { left: 100%; width: 40%; }
+    }
+
+    .progress-fill.indeterminate {
+      position: relative;
+      width: 40% !important;
+      animation: indeterminate 1s linear infinite;
+    }
   </style>
 </head>
 <body>
@@ -283,6 +324,16 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
         <button id="send-btn" disabled>Send to Phone</button>
         <button id="file-btn">Attach Image / File</button>
         <input type="file" id="file-input" accept="*/*" />
+      </div>
+
+      <div id="upload-progress">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="progress-label" id="progress-label">Reading file...</span>
+          <span class="progress-label" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
       </div>
     </div>
 
@@ -369,8 +420,41 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     });
 
     function handleFile(file) {
+      const uploadProgress = document.getElementById('upload-progress');
+      const progressFill   = document.getElementById('progress-fill');
+      const progressLabel  = document.getElementById('progress-label');
+      const progressPct    = document.getElementById('progress-pct');
+
+      if (!uploadProgress || !progressFill || !progressLabel || !progressPct) {
+        console.error('Progress elements not found');
+        return;
+      }
+
+      // Reset and show
+      progressFill.classList.remove('indeterminate');
+      progressFill.style.width = '0%';
+      progressLabel.textContent = 'Reading ' + file.name + '...';
+      progressPct.textContent = '0%';
+      uploadProgress.classList.add('visible');
+      sendBtn.disabled = true;
+
       const reader = new FileReader();
+
+      // Show real read percentage
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressFill.style.width = pct + '%';
+          progressPct.textContent = pct + '%';
+        }
+      };
+
       reader.onload = () => {
+        // Reading done — switch to indeterminate for send phase
+        progressLabel.textContent = 'Sending ' + file.name + '...';
+        progressPct.textContent = '';
+        progressFill.classList.add('indeterminate');
+
         const base64 = reader.result.split(',')[1];
         const isImage = file.type.startsWith('image/');
         const isVideo = file.type.startsWith('video/');
@@ -388,7 +472,30 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
           mimeType: file.type,
           id: generateId(),
         });
+
+        // Done
+        progressFill.classList.remove('indeterminate');
+        progressFill.style.width = '100%';
+        progressLabel.textContent = 'Sent!';
+        progressPct.textContent = '✓';
+
+        setTimeout(() => {
+          uploadProgress.classList.remove('visible');
+          progressFill.style.width = '0%';
+          progressPct.textContent = '';
+          sendBtn.disabled = false;
+        }, 1200);
       };
+
+      reader.onerror = () => {
+        uploadProgress.classList.remove('visible');
+        progressFill.style.width = '0%';
+        progressFill.classList.remove('indeterminate');
+        progressLabel.textContent = 'Failed to read file';
+        progressPct.textContent = '';
+        sendBtn.disabled = false;
+      };
+
       reader.readAsDataURL(file);
     }
 
