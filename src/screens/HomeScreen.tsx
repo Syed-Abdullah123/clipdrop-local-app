@@ -214,7 +214,7 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>📋 ClipDrop Local</Text>
+          <Text style={styles.headerTitle}>ClipDrop Local</Text>
           <View style={styles.headerRight}>
             <View
               style={[
@@ -370,6 +370,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#1e1e1e',
+  },
+  headerLogo: {
+    width: 42,
+    height: 42,
   },
   headerTitle: {
     fontSize: 17,
