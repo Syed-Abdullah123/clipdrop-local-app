@@ -3,7 +3,7 @@
 > Turn your phone into a local file-sharing server and transfer files instantly between mobile and desktop devices on the same network.
 
 <p align="center">
-  <img src="./assets/screenshots/Clipdrop1.png" alt="ClipDrop Local Banner" width="100%">
+  <img src="./assets/screenshots/Clipdrop1(1).png" alt="ClipDrop Local Banner" width="100%">
 </p>
 
 **ClipDrop Local** is a React Native application that transforms your mobile device into a lightweight local server, enabling fast and secure file sharing between your phone and any web browser connected to the same network.
