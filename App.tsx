@@ -4,8 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import HomeScreen from './src/screens/HomeScreen';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import SplashScreen from './src/screens/SplashScreen';
 
 export type RootStackParamList = {
+  Splash: undefined;
   Home: undefined;
 };
 
@@ -17,12 +19,14 @@ export default function App() {
       <NavigationContainer>
         <StatusBar style="light" />
         <Stack.Navigator
+          initialRouteName="Splash"
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: "#0f0f0f" },
             animation: "fade",
           }}
         >
+          <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
         </Stack.Navigator>
       </NavigationContainer>
