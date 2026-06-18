@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0f0f0f"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -28,6 +23,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0f0f0f"
+        }
+      ],
       "expo-video",
       [
         "expo-audio",
@@ -42,7 +46,8 @@
           "savePhotosPermission": "Allow ClipDrop Local to save photos to your gallery.",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
