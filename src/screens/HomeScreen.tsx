@@ -214,7 +214,9 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>ClipDrop Local</Text>
+          <Text style={styles.headerTitle}>ClipDrop 
+            <Text style={{ color: '#4ade80' }}>{' '}Local</Text>
+          </Text>
           <View style={styles.headerRight}>
             <View
               style={[
