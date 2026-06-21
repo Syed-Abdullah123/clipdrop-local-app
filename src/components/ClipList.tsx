@@ -464,13 +464,14 @@ const styles = StyleSheet.create({
   },
   listHeaderText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Manrope_Bold',
     color: '#444',
     letterSpacing: 0.8,
   },
   clearText: {
     fontSize: 13,
     color: '#555',
+    fontFamily: 'Manrope_Regular',
   },
   listContent: {
     paddingBottom: 20,
@@ -506,11 +507,12 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Manrope_Medium',
     letterSpacing: 0.5,
   },
   direction: {
     fontSize: 11,
+    fontFamily: 'Manrope_Medium',
     color: '#444',
   },
   progressPct: {
@@ -521,6 +523,7 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 11,
+    fontFamily: 'Manrope_Medium',
     color: '#444',
     marginLeft: 'auto',
   },
@@ -528,9 +531,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#ccc',
     lineHeight: 20,
+    fontFamily: 'Manrope_Regular',
   },
   linkText: {
     fontSize: 14,
+    fontFamily: 'Manrope_Regular',
     color: '#60a5fa',
     lineHeight: 20,
   },
@@ -561,14 +566,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  placeholderText: { fontSize: 13, color: '#444' },
+  placeholderText: { fontSize: 13, color: '#444', fontFamily: 'Manrope_Regular' },
   audioCard: {
     backgroundColor: '#111',
     borderRadius: 8,
     padding: 12,
     gap: 10,
   },
-  audioFilename: { fontSize: 13, color: '#aaa' },
+  audioFilename: { fontSize: 13, color: '#aaa', fontFamily: 'Manrope_Regular' },
   progressTrack: {
     width: '100%',
     height: 3,
@@ -589,6 +594,7 @@ const styles = StyleSheet.create({
   },
   audioTime: {
     fontSize: 11,
+    fontFamily: 'Manrope_Regular',
     color: '#555',
     minWidth: 32,
   },
@@ -602,7 +608,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   playBtnDisabled: { opacity: 0.4 },
-  playBtnText: { fontSize: 13, color: '#e8e8e8', fontWeight: '500' },
+  playBtnText: { fontSize: 13, color: '#e8e8e8', fontFamily: 'Manrope_Medium' },
   fileCard: {
     backgroundColor: '#111',
     borderRadius: 8,
@@ -619,11 +625,12 @@ const styles = StyleSheet.create({
   fileFilename: {
     fontSize: 14,
     color: '#e8e8e8',
-    fontWeight: '500',
+    fontFamily: 'Manrope_Medium',
     lineHeight: 20,
   },
   fileMime: {
     fontSize: 11,
+    fontFamily: 'Manrope_Regular',
     color: '#555',
     marginTop: 2,
   },
@@ -640,7 +647,7 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 13,
     color: '#4ade80',
-    fontWeight: '500',
+    fontFamily: 'Manrope_Medium',
   },
   copyBtn: {
     alignSelf: 'flex-start',
@@ -653,6 +660,7 @@ const styles = StyleSheet.create({
   },
   copyBtnText: {
     fontSize: 12,
+    fontFamily: 'Manrope_Regular',
     color: '#888',
   },
   emptyContainer: {
@@ -664,10 +672,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: '#333',
-    fontWeight: '500',
+    fontFamily: 'Manrope_Bold',
   },
   emptySubText: {
     fontSize: 13,
+    fontFamily: 'Manrope_Regular',
     color: '#2a2a2a',
     textAlign: 'center',
     lineHeight: 18,
@@ -685,6 +694,7 @@ const styles = StyleSheet.create({
   },
   pendingFilename: {
     fontSize: 12,
+    fontFamily: 'Manrope_Regular',
     color: '#555',
     marginBottom: 2,
   },

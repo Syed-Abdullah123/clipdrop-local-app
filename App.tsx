@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState, useCallback } from 'react';
 import { View } from 'react-native';
@@ -25,6 +26,14 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const [loaded, error] = useFonts({
+    CabinetG_Regular: require('./assets/fonts/CabinetGrotesk-Regular.otf'),
+    CabinetG_Medium: require('./assets/fonts/CabinetGrotesk-Medium.otf'),
+    CabinetG_Bold: require('./assets/fonts/CabinetGrotesk-Bold.otf'),
+    Manrope_Regular: require('./assets/fonts/Manrope-Regular.ttf'),
+    Manrope_Medium: require('./assets/fonts/Manrope-Medium.ttf'),
+    Manrope_Bold: require('./assets/fonts/Manrope-Bold.ttf'),
+  });
 
   useEffect(() => {
     async function prepare() {
@@ -41,6 +50,12 @@ export default function App() {
     prepare();
   }, []);
 
+  useEffect(() => {
+    if (loaded || error) {
+      ExpoSplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
       // This is called once the root view has actually laid out/painted,
@@ -50,7 +65,7 @@ export default function App() {
     }
   }, [appIsReady]);
 
-  if (!appIsReady) {
+  if (!appIsReady || (!loaded && !error)) {
     return null;
   }
 

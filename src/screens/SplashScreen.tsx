@@ -44,7 +44,7 @@ const SplashScreen = () => {
     // Navigate to Home after the animation has settled + a brief pause to read the text
     const timer = setTimeout(() => {
       navigation.replace('Home');
-    }, 2800);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -78,7 +78,8 @@ const SplashScreen = () => {
             marginTop: 24,
             color: '#fff',
             fontSize: 32,
-            fontWeight: '700',
+            // fontWeight: '700',
+            fontFamily: 'CabinetG_Bold',
           },
           textAnimatedStyle,
         ]}
@@ -93,15 +94,15 @@ const SplashScreen = () => {
             letterSpacing: 1.5,
             color: '#a1a1aa',
             fontSize: 14,
-            fontWeight: '400',
+            fontFamily: 'CabinetG_Regular',
           },
           subTextAnimatedStyle,
         ]}
       >
         SEND
-        <Text style={{ color: '#4ade80', fontWeight: '700', fontSize: 20 }}>{' '}.{' '}</Text>
+        <Text style={{ color: '#4ade80', fontFamily: 'CabinetG_Regular', fontSize: 20 }}>{' '}.{' '}</Text>
         RECEIVE
-        <Text style={{ color: '#4ade80', fontWeight: '700', fontSize: 20 }}>{' '}.{' '}</Text>
+        <Text style={{ color: '#4ade80', fontFamily: 'CabinetG_Regular', fontSize: 20 }}>{' '}.{' '}</Text>
         ANY FILE
       </Animated.Text>
     </View>

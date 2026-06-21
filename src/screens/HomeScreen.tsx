@@ -215,7 +215,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>ClipDrop 
-            <Text style={{ color: '#4ade80' }}>{' '}Local</Text>
+            <Text style={{ color: '#4ade80', fontFamily: 'CabinetG_Bold' }}>{' '}Local</Text>
           </Text>
           <View style={styles.headerRight}>
             <View
@@ -378,8 +378,9 @@ const styles = StyleSheet.create({
     height: 42,
   },
   headerTitle: {
+    fontFamily: 'CabinetG_Bold',
     fontSize: 17,
-    fontWeight: '700',
+    // fontWeight: '700',
     color: '#ffffff',
     letterSpacing: -0.3,
   },
@@ -402,6 +403,7 @@ const styles = StyleSheet.create({
   headerStatus: {
     fontSize: 12,
     color: '#666',
+    fontFamily: 'Manrope_Regular',
   },
   scroll: {
     flex: 1,
@@ -438,6 +440,7 @@ const styles = StyleSheet.create({
   sendProgressLabel: {
     flex: 1,
     fontSize: 13,
+    fontFamily: 'Manrope_Regular',
     color: '#aaa',
   },
   sendProgressTrack: {
@@ -472,6 +475,7 @@ const styles = StyleSheet.create({
   },
   mediaBtnText: {
     fontSize: 20,
+    fontFamily: 'Manrope_Medium',
     color: '#e8e8e8',
     lineHeight: 20,
   },
@@ -483,7 +487,8 @@ const styles = StyleSheet.create({
     borderColor: '#2a2a2a',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Manrope_Regular',
     color: '#e8e8e8',
     maxHeight: 120,
     lineHeight: 20,
@@ -499,8 +504,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e1e1e',
   },
   sendBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontFamily: 'Manrope_Bold',
     color: '#0f0f0f',
   },
   // Modal
@@ -520,7 +525,7 @@ const styles = StyleSheet.create({
   },
   attachTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_Bold',
     color: '#555',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -538,12 +543,13 @@ const styles = StyleSheet.create({
   attachOptionLabel: {
     fontSize: 16,
     color: '#e8e8e8',
-    fontWeight: '500',
+    fontFamily: 'Manrope_Medium',
   },
   attachOptionSub: {
     fontSize: 12,
     color: '#555',
     marginTop: 2,
+    fontFamily: 'Manrope_Regular',
   },
   attachCancel: {
     alignItems: 'center',
@@ -553,5 +559,6 @@ const styles = StyleSheet.create({
   attachCancelText: {
     fontSize: 15,
     color: '#666',
+    fontFamily: 'Manrope_Regular',
   },
 });
