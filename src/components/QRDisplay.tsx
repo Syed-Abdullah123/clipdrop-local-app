@@ -96,13 +96,14 @@ const styles = StyleSheet.create({
   },
   urlText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Manrope_Medium',
     color: '#ffffff',
     textAlign: 'center',
     letterSpacing: 0.3,
   },
   copyHint: {
     fontSize: 12,
+    fontFamily: 'Manrope_Regular',
     color: '#555',
     textAlign: 'center',
     marginTop: 4,
@@ -125,6 +126,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
+    fontFamily: 'Manrope_Regular',
     color: '#888',
   },
   offlineBox: {
@@ -138,9 +140,11 @@ const styles = StyleSheet.create({
   offlineText: {
     color: '#555',
     fontSize: 14,
+    fontFamily: 'Manrope_Regular',
   },
   hint: {
     fontSize: 12,
+    fontFamily: 'Manrope_Regular',
     color: '#444',
     textAlign: 'center',
     lineHeight: 18,
