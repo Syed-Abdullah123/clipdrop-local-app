@@ -1,14 +1,21 @@
+import { logoSvg } from './assets/logoSvg';
+const faviconSvg = encodeURIComponent(logoSvg);
 export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${faviconSvg}" width="32" height="32" />
   <title>ClipDrop Local</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --font-primary: 'Manrope', sans-serif;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: var(--font-primary);
       background: #0f0f0f;
       color: #e8e8e8;
       min-height: 100vh;
@@ -26,9 +33,41 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
 
     header h1 {
       font-size: 18px;
+      font-family: 'Cabinet Grotesk', sans-serif;
       font-weight: 600;
       color: #fff;
       letter-spacing: -0.3px;
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .logo svg {
+      width: 150%;
+      height: 150%;
+      display: block;
+      transform: translate(-10%, -20%);
+    }
+
+    .app-title h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .app-title h1 span {
+      color: #4ade80;
     }
 
     #status-dot {
@@ -310,10 +349,19 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
 </head>
 <body>
   <header>
-    <h1>📋 ClipDrop Local</h1>
-    <div style="display:flex;align-items:center;gap:6px">
-      <span id="status-dot"></span>
-      <span id="status-text">Connecting...</span>
+    <div class="app-title">
+      <div class="logo">
+        ${logoSvg}
+      </div>
+
+      <h1>
+        ClipDrop <span>Local</span>
+      </h1>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:6px"> 
+      <span id="status-dot"></span> 
+      <span id="status-text">Connecting...</span> 
     </div>
   </header>
 
