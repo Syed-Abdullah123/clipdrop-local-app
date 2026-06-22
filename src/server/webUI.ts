@@ -6,6 +6,7 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${faviconSvg}" width="32" height="32" />
+  <link href="https://fonts.cdnfonts.com/css/cabinet-grotesk" rel="stylesheet">
   <title>ClipDrop Local</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -61,6 +62,7 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     .app-title h1 {
       margin: 0;
       font-size: 18px;
+      font-family: 'Cabinet Grotesk', sans-serif;
       font-weight: 700;
       color: #fff;
       letter-spacing: -0.3px;
