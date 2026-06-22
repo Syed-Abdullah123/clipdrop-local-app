@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import HomeScreen from './src/screens/HomeScreen';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import SplashScreen from './src/screens/SplashScreen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Prevent the native splash from auto-hiding the moment JS mounts —
 // keep it visible until we explicitly call hideAsync() below.
@@ -70,23 +71,25 @@ export default function App() {
   }
 
   return (
-    <KeyboardProvider>
-      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-        <NavigationContainer>
-          <StatusBar style="light" />
-          <Stack.Navigator
-            initialRouteName="Splash"
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#0f0f0f" },
-              animation: "fade",
-            }}
-          >
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </View>
-    </KeyboardProvider>
+    <SafeAreaProvider>
+      <KeyboardProvider>
+        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <Stack.Navigator
+              initialRouteName="Splash"
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: "#0f0f0f" },
+                animation: "fade",
+              }}
+            >
+              <Stack.Screen name="Splash" component={SplashScreen} />
+              <Stack.Screen name="Home" component={HomeScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </View>
+      </KeyboardProvider>
+    </SafeAreaProvider>
   );
 }

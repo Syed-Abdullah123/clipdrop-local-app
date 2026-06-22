@@ -23,7 +23,7 @@ import {
 } from 'expo-file-system/legacy';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalServer } from '../hooks/useLocalServer';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRDisplay from '../components/QRDisplay';
 import ClipList from '../components/ClipList';
 
@@ -38,6 +38,8 @@ export default function HomeScreen() {
   const [isSending, setIsSending] = useState(false);
   const [sendingLabel, setSendingLabel] = useState('');
   const [activeSendingId, setActiveSendingId] = useState<string | null>(null);
+  
+  const insets = useSafeAreaInsets();
 
   const activeClip = clips.find(c => c.id === activeSendingId);
   const progress = activeClip?.progress ?? 0;
@@ -316,7 +318,13 @@ export default function HomeScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowAttachMenu(false)}
         >
-          <View style={styles.attachMenu}>
+          <View style={[
+              styles.attachMenu,
+              {
+                paddingBottom: insets.bottom + 14,
+              },
+            ]}
+          >
             <Text style={styles.attachTitle}>Send attachment</Text>
 
             <TouchableOpacity style={styles.attachOption} onPress={handlePickImage}>
