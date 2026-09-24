@@ -75,7 +75,7 @@ export default function App() {
       <KeyboardProvider>
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <NavigationContainer>
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <Stack.Navigator
               initialRouteName="Splash"
               screenOptions={{

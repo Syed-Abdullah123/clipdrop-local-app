@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,36 +12,44 @@ import {
   Modal,
   Pressable,
   Keyboard,
-  ActivityIndicator
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
+  ActivityIndicator,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 // import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { useLocalServer } from "../hooks/useLocalServer";
 import {
-  readAsStringAsync,
-  EncodingType,
-} from 'expo-file-system/legacy';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useLocalServer } from '../hooks/useLocalServer';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import QRDisplay from '../components/QRDisplay';
-import ClipList from '../components/ClipList';
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import QRDisplay from "../components/QRDisplay";
+import ClipList from "../components/ClipList";
 
 function isLink(text: string): boolean {
   return /^https?:\/\//.test(text.trim());
 }
 
 export default function HomeScreen() {
-  const { serverState, clips, sendClip, clearClips, addPendingClip, updateClip, updateClipProgress } = useLocalServer();
-  const [inputText, setInputText] = useState('');
+  const {
+    serverState,
+    clips,
+    sendClip,
+    clearClips,
+    addPendingClip,
+    updateClip,
+    updateClipProgress,
+  } = useLocalServer();
+  const [inputText, setInputText] = useState("");
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [sendingLabel, setSendingLabel] = useState('');
+  const [sendingLabel, setSendingLabel] = useState("");
   const [activeSendingId, setActiveSendingId] = useState<string | null>(null);
-  
+
   const insets = useSafeAreaInsets();
 
-  const activeClip = clips.find(c => c.id === activeSendingId);
+  const activeClip = clips.find((c) => c.id === activeSendingId);
   const progress = activeClip?.progress ?? 0;
 
   const handleSend = () => {
@@ -49,11 +57,11 @@ export default function HomeScreen() {
     if (!text) return;
 
     sendClip({
-      type: isLink(text) ? 'link' : 'text',
+      type: isLink(text) ? "link" : "text",
       content: text,
     });
 
-    setInputText('');
+    setInputText("");
   };
 
   const sendFileAsClip = async (
@@ -61,13 +69,13 @@ export default function HomeScreen() {
     filename: string,
     mimeType: string,
   ) => {
-    let type: 'image' | 'video' | 'audio' | 'file' = 'file';
-    if (mimeType.startsWith('image/')) type = 'image';
-    else if (mimeType.startsWith('video/')) type = 'video';
-    else if (mimeType.startsWith('audio/')) type = 'audio';
+    let type: "image" | "video" | "audio" | "file" = "file";
+    if (mimeType.startsWith("image/")) type = "image";
+    else if (mimeType.startsWith("video/")) type = "video";
+    else if (mimeType.startsWith("audio/")) type = "audio";
 
     // Add pending placeholder immediately so user sees it in feed
-    const pendingId = addPendingClip(type, 'sent', filename, mimeType);
+    const pendingId = addPendingClip(type, "sent", filename, mimeType);
     setActiveSendingId(pendingId);
     setIsSending(true);
     updateClipProgress(pendingId, 1);
@@ -81,13 +89,15 @@ export default function HomeScreen() {
     }, 200);
 
     try {
-      const base64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
+      const base64 = await readAsStringAsync(uri, {
+        encoding: EncodingType.Base64,
+      });
       clearInterval(progressInterval);
 
       setSendingLabel(`Sending ${filename}...`);
       updateClipProgress(pendingId, 90);
 
-      const { sendToClients } = await import('../server/wsServer');
+      const { sendToClients } = await import("../server/wsServer");
       const id = pendingId;
       const msg = { type, content: base64, filename, mimeType, id: pendingId };
 
@@ -100,27 +110,31 @@ export default function HomeScreen() {
       updateClipProgress(pendingId, 100);
     } catch (e) {
       clearInterval(progressInterval);
-      console.error('File read error:', e);
-      ToastAndroid.show('Failed to send file', ToastAndroid.SHORT);
+      console.error("File read error:", e);
+      ToastAndroid.show("Failed to send file", ToastAndroid.SHORT);
       // Remove the pending clip on failure
-      updateClip(pendingId, '');
+      updateClip(pendingId, "");
     } finally {
       setActiveSendingId(null);
       setIsSending(false);
-      setSendingLabel('');
+      setSendingLabel("");
     }
   };
 
   const handlePickImage = async () => {
     setShowAttachMenu(false);
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) { ToastAndroid.show('Permission denied', ToastAndroid.SHORT); return; }
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        ToastAndroid.show("Permission denied", ToastAndroid.SHORT);
+        return;
+      }
 
-      const pendingId = addPendingClip('image', 'sent');
+      const pendingId = addPendingClip("image", "sent");
       setActiveSendingId(pendingId);
       setIsSending(true);
-      setSendingLabel('Reading image...');
+      setSendingLabel("Reading image...");
 
       let fakeProgress = 0;
       const progressInterval = setInterval(() => {
@@ -129,7 +143,7 @@ export default function HomeScreen() {
       }, 150);
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
+        mediaTypes: "images",
         quality: 0.7,
         base64: true,
       });
@@ -137,42 +151,46 @@ export default function HomeScreen() {
       clearInterval(progressInterval);
 
       if (result.canceled || !result.assets[0] || !result.assets[0].base64) {
-        updateClip(pendingId, '');
+        updateClip(pendingId, "");
         setIsSending(false);
         return;
       }
 
       const asset = result.assets[0];
-      setSendingLabel('Sending image...');
+      setSendingLabel("Sending image...");
       updateClipProgress(pendingId, 90);
 
-      const { sendToClients } = await import('../server/wsServer');
+      const { sendToClients } = await import("../server/wsServer");
       const msg = {
-        type: 'image' as const,
+        type: "image" as const,
         content: asset.base64!,
         filename: asset.fileName ?? `image_${Date.now()}.jpg`,
-        mimeType: asset.mimeType ?? 'image/jpeg',
+        mimeType: asset.mimeType ?? "image/jpeg",
         id: pendingId,
       };
       sendToClients(msg);
       updateClip(pendingId, asset.base64!);
       updateClipProgress(pendingId, 100);
     } catch (e) {
-      ToastAndroid.show('Failed to pick image', ToastAndroid.SHORT);
+      ToastAndroid.show("Failed to pick image", ToastAndroid.SHORT);
     } finally {
       setActiveSendingId(null);
       setIsSending(false);
-      setSendingLabel('');
+      setSendingLabel("");
     }
   };
 
   const handlePickVideo = async () => {
     setShowAttachMenu(false);
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) { ToastAndroid.show('Permission denied', ToastAndroid.SHORT); return; }
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        ToastAndroid.show("Permission denied", ToastAndroid.SHORT);
+        return;
+      }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'videos',
+        mediaTypes: "videos",
         quality: 0.7,
         base64: false,
       });
@@ -181,10 +199,10 @@ export default function HomeScreen() {
       await sendFileAsClip(
         asset.uri,
         asset.fileName ?? `video_${Date.now()}.mp4`,
-        asset.mimeType ?? 'video/mp4',
+        asset.mimeType ?? "video/mp4",
       );
     } catch (e) {
-      ToastAndroid.show('Failed to pick video', ToastAndroid.SHORT);
+      ToastAndroid.show("Failed to pick video", ToastAndroid.SHORT);
     }
   };
 
@@ -193,7 +211,7 @@ export default function HomeScreen() {
     setShowAttachMenu(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
+        type: "*/*",
         copyToCacheDirectory: true,
       });
       if (result.canceled || !result.assets[0]) return;
@@ -201,10 +219,10 @@ export default function HomeScreen() {
       await sendFileAsClip(
         asset.uri,
         asset.name,
-        asset.mimeType ?? 'application/octet-stream',
+        asset.mimeType ?? "application/octet-stream",
       );
     } catch (e) {
-      ToastAndroid.show('Failed to pick file', ToastAndroid.SHORT);
+      ToastAndroid.show("Failed to pick file", ToastAndroid.SHORT);
     }
   };
 
@@ -216,8 +234,12 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>ClipDrop 
-            <Text style={{ color: '#4ade80', fontFamily: 'CabinetG_Bold' }}>{' '}Local</Text>
+          <Text style={styles.headerTitle}>
+            ClipDrop
+            <Text style={{ color: "#4ade80", fontFamily: "CabinetG_Bold" }}>
+              {" "}
+              Local
+            </Text>
           </Text>
           <View style={styles.headerRight}>
             <View
@@ -263,10 +285,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.sendProgressTrack}>
                 <View
-                  style={[
-                    styles.sendProgressFill,
-                    { width: `${progress}%` },
-                  ]}
+                  style={[styles.sendProgressFill, { width: `${progress}%` }]}
                 />
               </View>
             </View>
@@ -286,21 +305,35 @@ export default function HomeScreen() {
                 style={styles.input}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder="Type or paste something..."
+                placeholder="Type something..."
                 placeholderTextColor="#444"
                 multiline
                 maxLength={5000}
               />
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[
                   styles.sendBtn,
-                  (!inputText.trim() || !serverState.isRunning) && styles.sendBtnDisabled,
+                  (!inputText.trim() || !serverState.isRunning) &&
+                    styles.sendBtnDisabled,
                 ]}
                 onPress={handleSend}
                 disabled={!inputText.trim() || !serverState.isRunning}
                 activeOpacity={0.8}
               >
                 <Text style={styles.sendBtnText}>Send</Text>
+              </TouchableOpacity> */}
+              {/* CHATGPT CODE VERSION */}
+              <TouchableOpacity
+                style={[
+                  styles.sendBtn,
+                  (!inputText.trim() || !serverState.isRunning) &&
+                    styles.sendBtnDisabled,
+                ]}
+                onPress={handleSend}
+                disabled={!inputText.trim() || !serverState.isRunning}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.sendBtnText}>SEND ↗</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -318,7 +351,8 @@ export default function HomeScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowAttachMenu(false)}
         >
-          <View style={[
+          <View
+            style={[
               styles.attachMenu,
               {
                 paddingBottom: insets.bottom + 14,
@@ -327,7 +361,10 @@ export default function HomeScreen() {
           >
             <Text style={styles.attachTitle}>Send attachment</Text>
 
-            <TouchableOpacity style={styles.attachOption} onPress={handlePickImage}>
+            <TouchableOpacity
+              style={styles.attachOption}
+              onPress={handlePickImage}
+            >
               <Text style={styles.attachOptionIcon}>🖼️</Text>
               <View>
                 <Text style={styles.attachOptionLabel}>Image</Text>
@@ -335,7 +372,10 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.attachOption} onPress={handlePickVideo}>
+            <TouchableOpacity
+              style={styles.attachOption}
+              onPress={handlePickVideo}
+            >
               <Text style={styles.attachOptionIcon}>🎬</Text>
               <View>
                 <Text style={styles.attachOptionLabel}>Video</Text>
@@ -343,11 +383,16 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.attachOption} onPress={handlePickFile}>
+            <TouchableOpacity
+              style={styles.attachOption}
+              onPress={handlePickFile}
+            >
               <Text style={styles.attachOptionIcon}>📎</Text>
               <View>
                 <Text style={styles.attachOptionLabel}>File</Text>
-                <Text style={styles.attachOptionSub}>Audio, PDF, DOC, and more</Text>
+                <Text style={styles.attachOptionSub}>
+                  Audio, PDF, DOC, and more
+                </Text>
               </View>
             </TouchableOpacity>
 
@@ -367,206 +412,230 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
+    backgroundColor: "#F4F0E8",
   },
   flex: {
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e1e1e',
-  },
-  headerLogo: {
-    width: 42,
-    height: 42,
+    paddingVertical: 16,
+    backgroundColor: "#F4F0E8",
+    borderBottomWidth: 3,
+    borderBottomColor: "#111111",
   },
   headerTitle: {
-    fontFamily: 'CabinetG_Bold',
-    fontSize: 17,
-    // fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.3,
+    fontFamily: "CabinetG_Bold",
+    fontSize: 21,
+    color: "#111111",
+    letterSpacing: -0.7,
   },
   headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    backgroundColor: "#FFE14A",
+    borderWidth: 2,
+    borderColor: "#111111",
+    boxShadow: '3px 3px 0px #111111',
   },
   serverDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 0,
+    marginRight: 7,
+    borderWidth: 2,
+    borderColor: "#111111",
   },
   serverDotOn: {
-    backgroundColor: '#4ade80',
+    backgroundColor: "#4ADE80",
   },
   serverDotOff: {
-    backgroundColor: '#ff4444',
+    backgroundColor: "#FF6B6B",
   },
   headerStatus: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'Manrope_Regular',
+    fontSize: 11,
+    color: "#111111",
+    fontFamily: "Manrope_Bold",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 12,
+    paddingBottom: 30,
   },
   divider: {
-    height: 1,
-    backgroundColor: '#1e1e1e',
+    height: 3,
+    backgroundColor: "#111111",
     marginHorizontal: 20,
-    marginVertical: 20,
+    marginVertical: 24,
   },
   inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#1e1e1e',
-    backgroundColor: '#0f0f0f',
-    gap: 10,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: "#F4F0E8",
+    borderTopWidth: 3,
+    borderTopColor: "#111111",
+  },
+  sendRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  mediaBtn: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-end",
+    backgroundColor: "#4D7CFE",
+    borderWidth: 3,
+    borderColor: "#111111",
+    boxShadow: '3px 3px 0px #111111',
+  },
+  mediaBtnText: {
+    fontSize: 28,
+    fontFamily: "Manrope_Bold",
+    color: "#FFFFFF",
+    lineHeight: 29,
+  },
+  input: {
+    flex: 1,
+    minHeight: 46,
+    maxHeight: 120,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 3,
+    borderColor: "#111111",
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    fontSize: 14,
+    fontFamily: "Manrope_Medium",
+    color: "#111111",
+    lineHeight: 20,
+  },
+  sendBtn: {
+    minHeight: 46,
+    paddingHorizontal: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-end",
+    backgroundColor: "#FFE14A",
+    borderWidth: 3,
+    borderColor: "#111111",
+    boxShadow: '3px 3px 0px #111111',
+  },
+  sendBtnDisabled: {
+    backgroundColor: "#D8D4CC",
+    boxShadow: '0px 0px 0px transparent',
+  },
+  sendBtnText: {
+    fontSize: 12,
+    fontFamily: "Manrope_Bold",
+    color: "#111111",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
   sendProgressBar: {
-    flex: 1,
-    gap: 8,
     paddingVertical: 4,
   },
   sendProgressInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
+    marginBottom: 9,
   },
   sendProgressLabel: {
     flex: 1,
     fontSize: 13,
-    fontFamily: 'Manrope_Regular',
-    color: '#aaa',
+    fontFamily: "Manrope_Bold",
+    color: "#111111",
   },
   sendProgressTrack: {
-    width: '100%',
-    height: 3,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 2,
-    overflow: 'hidden',
+    width: "100%",
+    height: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#111111",
+    overflow: "hidden",
   },
   sendProgressFill: {
-    height: '100%',
-    width: '60%',
-    backgroundColor: '#4ade80',
-    borderRadius: 2,
+    height: "100%",
+    backgroundColor: "#4ADE80",
   },
-  sendRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 10,
-  },
-  mediaBtn: {
-    width: 24,
-    height: 24,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-  },
-  mediaBtnText: {
-    fontSize: 20,
-    fontFamily: 'Manrope_Medium',
-    color: '#e8e8e8',
-    lineHeight: 20,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    fontFamily: 'Manrope_Regular',
-    color: '#e8e8e8',
-    maxHeight: 120,
-    lineHeight: 20,
-  },
-  sendBtn: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignSelf: 'flex-end',
-  },
-  sendBtnDisabled: {
-    backgroundColor: '#1e1e1e',
-  },
-  sendBtnText: {
-    fontSize: 14,
-    fontFamily: 'Manrope_Bold',
-    color: '#0f0f0f',
-  },
-  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(17, 17, 17, 0.45)",
+    justifyContent: "flex-end",
   },
   attachMenu: {
-    backgroundColor: '#161616',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    backgroundColor: "#F4F0E8",
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    gap: 8,
+    borderTopWidth: 3,
+    borderTopColor: "#111111",
   },
   attachTitle: {
-    fontSize: 13,
-    fontFamily: 'Manrope_Bold',
-    color: '#555',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 12,
+    fontSize: 11,
+    fontFamily: "Manrope_Bold",
+    color: "#4D7CFE",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 6,
   },
   attachOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e1e1e',
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#111111",
+    boxShadow: '3px 3px 0px #111111',
   },
-  attachOptionIcon: { fontSize: 24 },
+  attachOptionIcon: {
+    width: 42,
+    height: 42,
+    textAlign: "center",
+    textAlignVertical: "center",
+    fontSize: 21,
+    backgroundColor: "#FFE14A",
+    borderWidth: 2,
+    borderColor: "#111111",
+    marginRight: 13,
+  },
   attachOptionLabel: {
-    fontSize: 16,
-    color: '#e8e8e8',
-    fontFamily: 'Manrope_Medium',
+    fontSize: 15,
+    color: "#111111",
+    fontFamily: "Manrope_Bold",
   },
   attachOptionSub: {
-    fontSize: 12,
-    color: '#555',
+    fontSize: 11,
+    color: "#666666",
     marginTop: 2,
-    fontFamily: 'Manrope_Regular',
+    fontFamily: "Manrope_Regular",
   },
   attachCancel: {
-    alignItems: 'center',
-    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+    backgroundColor: "#111111",
+    borderWidth: 2,
+    borderColor: "#111111",
     marginTop: 4,
   },
   attachCancelText: {
-    fontSize: 15,
-    color: '#666',
-    fontFamily: 'Manrope_Regular',
+    fontSize: 12,
+    color: "#FFFFFF",
+    fontFamily: "Manrope_Bold",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
 });

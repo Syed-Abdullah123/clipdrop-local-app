@@ -7,345 +7,900 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${faviconSvg}" width="32" height="32" />
   <link href="https://fonts.cdnfonts.com/css/cabinet-grotesk" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
   <title>ClipDrop Local</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    /* =========================================================
+       RESET
+       ========================================================= */
+  
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+  
     :root {
       --font-primary: 'Manrope', sans-serif;
+      --font-display: 'Cabinet Grotesk', sans-serif;
+  
+      --bg: #F4F0E8;
+      --surface: #FFFFFF;
+      --surface-alt: #FFF9E8;
+  
+      --black: #111111;
+      --text: #111111;
+      --muted: #666666;
+      --muted-light: #888888;
+  
+      --blue: #4D7CFE;
+      --green: #4ADE80;
+      --yellow: #FFE14A;
+      --pink: #FF6B6B;
+      --purple: #C084FC;
+  
+      --border: 3px solid var(--black);
+  
+      --shadow-sm: 3px 3px 0px var(--black);
+      --shadow-md: 5px 5px 0px var(--black);
+      --shadow-lg: 7px 7px 0px var(--black);
     }
-
+  
+  
+    /* =========================================================
+       BODY
+       ========================================================= */
+  
     body {
       font-family: var(--font-primary);
-      background: #0f0f0f;
-      color: #e8e8e8;
+      background: var(--bg);
+      color: var(--text);
+  
       min-height: 100vh;
+  
       display: flex;
       flex-direction: column;
     }
-
+  
+  
+    /* =========================================================
+       HEADER
+       ========================================================= */
+  
     header {
-      padding: 20px 24px;
-      border-bottom: 1px solid #1e1e1e;
+      padding: 18px 28px;
+  
+      background: var(--surface);
+  
+      border-bottom: var(--border);
+  
       display: flex;
       align-items: center;
       justify-content: space-between;
+  
+      position: relative;
+      z-index: 10;
     }
-
-    header h1 {
-      font-size: 18px;
-      font-family: 'Cabinet Grotesk', sans-serif;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: -0.3px;
-    }
-
+  
     .app-title {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
-
+  
     .logo {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
+
       flex-shrink: 0;
+
+      background: var(--yellow);
+
+      border: 2px solid var(--black);
+
+      box-shadow: var(--shadow-sm);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      overflow: hidden;
     }
 
     .logo svg {
-      width: 150%;
-      height: 150%;
-      display: block;
-      transform: translate(-10%, -20%);
-    }
+      width: 125%;
+      height: 125%;
 
+      display: block;
+
+      transform: none;
+    }
+  
     .app-title h1 {
       margin: 0;
-      font-size: 18px;
-      font-family: 'Cabinet Grotesk', sans-serif;
+  
+      font-size: 20px;
+  
+      font-family: var(--font-display);
+  
       font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.3px;
+  
+      color: var(--black);
+  
+      letter-spacing: -0.5px;
     }
-
+  
     .app-title h1 span {
-      color: #4ade80;
+      color: #42c773;
     }
-
+  
+  
+    /* =========================================================
+       SERVER STATUS
+       ========================================================= */
+  
     #status-dot {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
+  
       border-radius: 50%;
-      background: #ff4444;
+  
+      background: var(--pink);
+  
       display: inline-block;
+  
       margin-right: 8px;
+  
+      border: 2px solid var(--black);
+  
       transition: background 0.3s;
     }
-
-    #status-dot.connected { background: #4ade80; }
-
-    #status-text {
-      font-size: 13px;
-      color: #666;
+  
+    #status-dot.connected {
+      background: var(--green);
     }
-
+  
+    #status-text {
+      font-size: 11px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 700;
+  
+      color: var(--black);
+  
+      text-transform: uppercase;
+  
+      letter-spacing: 0.6px;
+    }
+  
+  
+    /* =========================================================
+       MAIN
+       ========================================================= */
+  
     main {
       flex: 1;
+  
       display: flex;
       flex-direction: column;
-      max-width: 720px;
+  
+      max-width: 760px;
+  
       width: 100%;
+  
       margin: 0 auto;
-      padding: 24px;
-      gap: 20px;
+  
+      padding: 30px 24px 50px;
+  
+      gap: 24px;
     }
-
-    /* Input area */
+  
+  
+    /* =========================================================
+       INPUT CARD
+       ========================================================= */
+  
     .input-card {
-      background: #161616;
-      border: 1px solid #1e1e1e;
-      border-radius: 12px;
-      padding: 16px;
+      background: var(--surface);
+  
+      border: var(--border);
+  
+      padding: 18px;
+  
       display: flex;
       flex-direction: column;
-      gap: 12px;
+  
+      gap: 14px;
+  
+      box-shadow: var(--shadow-lg);
     }
-
+  
+  
+    /* =========================================================
+       TEXTAREA
+       ========================================================= */
+  
     textarea {
       width: 100%;
-      min-height: 100px;
-      background: #0f0f0f;
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      color: #e8e8e8;
+  
+      min-height: 115px;
+  
+      background: var(--surface-alt);
+  
+      border: 2px solid var(--black);
+  
+      border-radius: 0;
+  
+      color: var(--black);
+  
       font-size: 15px;
-      font-family: inherit;
-      padding: 12px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 500;
+  
+      padding: 14px;
+  
       resize: vertical;
+  
       outline: none;
-      transition: border-color 0.2s;
+  
+      transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease;
     }
-
-    textarea:focus { border-color: #444; }
-    textarea::placeholder { color: #444; }
-
+  
+    textarea:focus {
+      background: #FFFFFF;
+  
+      box-shadow: 4px 4px 0px var(--yellow);
+    }
+  
+    textarea::placeholder {
+      color: #999999;
+    }
+  
+  
+    /* =========================================================
+       ACTIONS
+       ========================================================= */
+  
     .actions {
       display: flex;
+  
       gap: 10px;
+  
       flex-wrap: wrap;
     }
-
+  
+  
+    /* =========================================================
+       BUTTON BASE
+       ========================================================= */
+  
     button {
-      padding: 9px 18px;
-      border-radius: 8px;
-      border: none;
-      font-size: 14px;
-      font-weight: 500;
+      padding: 10px 18px;
+  
+      border-radius: 0;
+  
+      border: 2px solid var(--black);
+  
+      font-size: 12px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 700;
+  
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
+  
+      transition:
+        transform 0.08s ease,
+        box-shadow 0.08s ease,
+        background 0.15s ease;
+  
+      box-shadow: var(--shadow-sm);
     }
-
-    button:active { transform: scale(0.97); }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-
+  
+    button:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+  
+      box-shadow: 4px 4px 0px var(--black);
+    }
+  
+    button:active:not(:disabled) {
+      transform: translate(3px, 3px);
+  
+      box-shadow: 0px 0px 0px var(--black);
+    }
+  
+    button:disabled {
+      opacity: 0.45;
+  
+      cursor: not-allowed;
+  
+      box-shadow: 2px 2px 0px var(--black);
+    }
+  
+  
+    /* =========================================================
+       SEND BUTTON
+       ========================================================= */
+  
     #send-btn {
-      background: #fff;
-      color: #0f0f0f;
+      background: var(--green);
+  
+      color: var(--black);
+  
+      border-color: var(--black);
     }
-
-    #send-btn:hover:not(:disabled) { opacity: 0.88; }
-
+  
+    #send-btn:hover:not(:disabled) {
+      background: #63ED91;
+    }
+  
+  
+    /* =========================================================
+       FILE BUTTON
+       ========================================================= */
+  
     #file-btn {
-      background: #1e1e1e;
-      color: #e8e8e8;
-      border: 1px solid #2a2a2a;
+      background: var(--yellow);
+  
+      color: var(--black);
+  
+      border-color: var(--black);
     }
-
-    #file-btn:hover { background: #252525; }
-
-    #file-input { display: none; }
-
-    /* Clip feed */
+  
+    #file-btn:hover:not(:disabled) {
+      background: #FFE96B;
+    }
+  
+    #file-input {
+      display: none;
+    }
+  
+  
+    /* =========================================================
+       CLIP FEED HEADER
+       ========================================================= */
+  
     .feed-header {
       font-size: 12px;
-      font-weight: 500;
-      color: #555;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 800;
+  
+      color: var(--black);
+  
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    #clip-feed {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .clip-item {
-      background: #161616;
-      border: 1px solid #1e1e1e;
-      border-radius: 10px;
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      animation: fadeIn 0.2s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .clip-item.sent { border-left: 2px solid #3b82f6; }
-    .clip-item.received { border-left: 2px solid #4ade80; }
-
-    .clip-meta {
+  
+      letter-spacing: 1.2px;
+  
       display: flex;
       align-items: center;
       gap: 8px;
     }
-
+  
+    .feed-header::before {
+      content: '';
+  
+      width: 10px;
+      height: 10px;
+  
+      background: var(--yellow);
+  
+      border: 2px solid var(--black);
+    }
+  
+  
+    /* =========================================================
+       CLIP FEED
+       ========================================================= */
+  
+    #clip-feed {
+      display: flex;
+  
+      flex-direction: column;
+  
+      gap: 14px;
+    }
+  
+  
+    /* =========================================================
+       CLIP CARD
+       ========================================================= */
+  
+    .clip-item {
+      background: var(--surface);
+  
+      border: var(--border);
+  
+      border-radius: 0;
+  
+      padding: 15px 16px;
+  
+      display: flex;
+      flex-direction: column;
+  
+      gap: 10px;
+  
+      box-shadow: var(--shadow-md);
+  
+      animation: fadeIn 0.2s ease;
+  
+      transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease;
+    }
+  
+    .clip-item:hover {
+      transform: translate(-1px, -1px);
+  
+      box-shadow: 7px 7px 0px var(--black);
+    }
+  
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+  
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  
+  
+    /* =========================================================
+       SENT / RECEIVED
+       ========================================================= */
+  
+    .clip-item.sent {
+      border-left: 8px solid var(--blue);
+    }
+  
+    .clip-item.received {
+      border-left: 8px solid var(--green);
+    }
+  
+  
+    /* =========================================================
+       CLIP META
+       ========================================================= */
+  
+    .clip-meta {
+      display: flex;
+  
+      align-items: center;
+  
+      gap: 8px;
+    }
+  
+  
+    /* =========================================================
+       CLIP BADGES
+       ========================================================= */
+  
     .clip-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 4px;
+      font-size: 9px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 800;
+  
+      padding: 5px 8px;
+  
+      border: 2px solid var(--black);
+  
+      border-radius: 0;
+  
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+  
+      letter-spacing: 0.8px;
+  
+      color: var(--black);
     }
-
-    .badge-text     { background: #1e2a3a; color: #60a5fa; }
-    .badge-link     { background: #1a2e1a; color: #4ade80; }
-    .badge-image    { background: #2a1e2e; color: #c084fc; }
-    .badge-file     { background: #2a2a1e; color: #facc15; }
-
+  
+    .badge-text {
+      background: #BFE0FF;
+    }
+  
+    .badge-link {
+      background: var(--green);
+    }
+  
+    .badge-image {
+      background: var(--purple);
+    }
+  
+    .badge-file {
+      background: var(--yellow);
+    }
+  
+  
+    /* =========================================================
+       DIRECTION / TIME
+       ========================================================= */
+  
     .clip-direction {
-      font-size: 11px;
-      color: #444;
+      font-size: 10px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 700;
+  
+      color: #555555;
+  
+      text-transform: uppercase;
     }
-
+  
     .clip-time {
-      font-size: 11px;
-      color: #444;
+      font-size: 10px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 500;
+  
+      color: #888888;
+  
       margin-left: auto;
     }
-
+  
+  
+    /* =========================================================
+       CLIP CONTENT
+       ========================================================= */
+  
     .clip-content {
       font-size: 14px;
-      color: #ccc;
-      word-break: break-all;
-      line-height: 1.5;
+  
+      color: var(--black);
+  
+      font-weight: 500;
+  
+      word-break: break-word;
+  
+      line-height: 1.6;
     }
-
+  
     .clip-content a {
-      color: #60a5fa;
-      text-decoration: none;
+      color: #315DD8;
+  
+      font-weight: 700;
+  
+      text-decoration: underline;
+  
+      text-decoration-thickness: 2px;
+  
+      text-underline-offset: 2px;
     }
-
-    .clip-content a:hover { text-decoration: underline; }
-
+  
+    .clip-content a:hover {
+      color: #1C46B0;
+    }
+  
+  
+    /* =========================================================
+       IMAGES
+       ========================================================= */
+  
+    .clip-image {
+      background: #F4F0E8;
+  
+      border: 2px solid var(--black);
+  
+      padding: 6px;
+    }
+  
     .clip-image img {
+      display: block;
+  
       max-width: 100%;
-      max-height: 300px;
-      border-radius: 6px;
-      margin-top: 4px;
+  
+      max-height: 320px;
+  
+      margin: 0 auto;
+  
       object-fit: contain;
     }
-
+  
+  
+    /* =========================================================
+       COPY BUTTON
+       ========================================================= */
+  
     .copy-btn {
       align-self: flex-start;
-      background: #1e1e1e;
-      color: #888;
-      border: 1px solid #2a2a2a;
-      padding: 4px 12px;
-      font-size: 12px;
-      border-radius: 6px;
-    }
-
-    .copy-btn:hover { color: #e8e8e8; background: #252525; }
-
-    .empty-state {
-      text-align: center;
-      color: #333;
-      font-size: 14px;
-      padding: 40px 0;
-    }
-
-    /* Drop overlay */
-    #drop-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(59, 130, 246, 0.08);
-      border: 2px dashed #3b82f6;
+  
+      background: var(--yellow);
+  
+      color: var(--black);
+  
+      border: 2px solid var(--black);
+  
+      padding: 7px 13px;
+  
+      font-size: 10px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 800;
+  
       border-radius: 0;
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: #3b82f6;
-      pointer-events: none;
+  
+      text-transform: uppercase;
+  
+      letter-spacing: 0.7px;
+  
+      box-shadow: 2px 2px 0px var(--black);
     }
-
-    #drop-overlay.visible { display: flex; }
-
+  
+    .copy-btn:hover {
+      color: var(--black);
+  
+      background: #FFE96B;
+  
+      box-shadow: 3px 3px 0px var(--black);
+    }
+  
+  
+    /* =========================================================
+       DOWNLOAD BUTTON
+       ========================================================= */
+  
     .download-btn {
       display: inline-flex;
+  
       align-items: center;
+  
       gap: 6px;
-      margin-top: 8px;
-      padding: 6px 14px;
-      background: #1e1e1e;
-      border: 1px solid #2a2a2a;
-      border-radius: 7px;
-      color: #4ade80;
-      font-size: 13px;
-      font-weight: 500;
+  
+      align-self: flex-start;
+  
+      margin-top: 4px;
+  
+      padding: 8px 13px;
+  
+      background: var(--green);
+  
+      border: 2px solid var(--black);
+  
+      border-radius: 0;
+  
+      color: var(--black);
+  
+      font-size: 11px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 800;
+  
       cursor: pointer;
+  
       text-decoration: none;
+  
+      box-shadow: 2px 2px 0px var(--black);
+  
+      transition:
+        transform 0.08s ease,
+        box-shadow 0.08s ease;
     }
-
-    .download-btn:hover { background: #252525; }
-
-     #upload-progress {
+  
+    .download-btn:hover {
+      background: #63ED91;
+  
+      transform: translate(-1px, -1px);
+  
+      box-shadow: 3px 3px 0px var(--black);
+    }
+  
+    .download-btn:active {
+      transform: translate(2px, 2px);
+  
+      box-shadow: none;
+    }
+  
+  
+    /* =========================================================
+       EMPTY STATE
+       ========================================================= */
+  
+    .empty-state {
+      text-align: center;
+  
+      color: #666666;
+  
+      font-size: 13px;
+  
+      font-family: var(--font-primary);
+  
+      padding: 48px 20px;
+    }
+  
+  
+    /* =========================================================
+       DRAG & DROP OVERLAY
+       ========================================================= */
+  
+    #drop-overlay {
       display: none;
+  
+      position: fixed;
+  
+      inset: 0;
+  
+      background: rgba(255, 225, 74, 0.18);
+  
+      border: 6px dashed var(--black);
+  
+      z-index: 100;
+  
+      align-items: center;
+  
+      justify-content: center;
+  
+      font-size: 22px;
+  
+      font-family: var(--font-display);
+  
+      font-weight: 700;
+  
+      color: var(--black);
+  
+      pointer-events: none;
+    }
+  
+    #drop-overlay::before {
+      content: 'DROP FILE HERE';
+    }
+  
+    #drop-overlay.visible {
+      display: flex;
+    }
+  
+  
+    /* =========================================================
+       UPLOAD PROGRESS
+       ========================================================= */
+  
+    #upload-progress {
+      display: none;
+  
       flex-direction: column;
-      gap: 6px;
-      padding: 10px 0 4px;
+  
+      gap: 7px;
+  
+      padding: 8px 0 2px;
     }
-
-    #upload-progress.visible { display: flex; }
-
+  
+    #upload-progress.visible {
+      display: flex;
+    }
+  
     .progress-label {
-      font-size: 12px;
-      color: #666;
+      font-size: 11px;
+  
+      font-family: var(--font-primary);
+  
+      font-weight: 700;
+  
+      color: #555555;
     }
-
+  
     .progress-track {
       width: 100%;
-      height: 4px;
-      background: #1e1e1e;
-      border-radius: 2px;
+  
+      height: 10px;
+  
+      background: #FFFFFF;
+  
+      border: 2px solid var(--black);
+  
+      border-radius: 0;
+  
       overflow: hidden;
     }
-
+  
     .progress-fill {
       height: 100%;
-      background: #4ade80;
-      border-radius: 2px;
+  
+      background: var(--green);
+  
       transition: width 0.1s ease;
+  
       width: 0%;
     }
-
+  
+  
+    /* =========================================================
+       INDETERMINATE PROGRESS
+       ========================================================= */
+  
     @keyframes indeterminate {
-      0%   { left: -40%; width: 40%; }
-      100% { left: 100%; width: 40%; }
+      0% {
+        left: -40%;
+        width: 40%;
+      }
+  
+      100% {
+        left: 100%;
+        width: 40%;
+      }
     }
-
+  
     .progress-fill.indeterminate {
       position: relative;
+  
       width: 40% !important;
+  
+      background: var(--yellow);
+  
       animation: indeterminate 1s linear infinite;
+    }
+  
+  
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+  
+    @media (max-width: 600px) {
+  
+      header {
+        padding: 16px 18px;
+      }
+  
+      .app-title h1 {
+        font-size: 18px;
+      }
+  
+      main {
+        padding: 22px 16px 40px;
+  
+        gap: 20px;
+      }
+  
+      .input-card {
+        padding: 14px;
+  
+        box-shadow: var(--shadow-md);
+      }
+  
+      textarea {
+        min-height: 100px;
+  
+        font-size: 14px;
+      }
+  
+      .actions {
+        gap: 8px;
+      }
+  
+      button {
+        padding: 9px 14px;
+      }
+  
+      .clip-item {
+        padding: 13px;
+  
+        box-shadow: 4px 4px 0px var(--black);
+      }
+  
+      .clip-item:hover {
+        transform: none;
+  
+        box-shadow: 4px 4px 0px var(--black);
+      }
+  
+      .clip-image img {
+        max-height: 240px;
+      }
     }
   </style>
 </head>
