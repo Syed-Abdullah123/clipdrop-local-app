@@ -27,29 +27,23 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     :root {
       --font-primary: 'Manrope', sans-serif;
       --font-display: 'Cabinet Grotesk', sans-serif;
-  
       --bg: #F4F0E8;
       --surface: #FFFFFF;
       --surface-alt: #FFF9E8;
-  
       --black: #111111;
       --text: #111111;
       --muted: #666666;
       --muted-light: #888888;
-  
       --blue: #4D7CFE;
       --green: #4ADE80;
       --yellow: #FFE14A;
       --pink: #FF6B6B;
       --purple: #C084FC;
-  
       --border: 3px solid var(--black);
-  
       --shadow-sm: 3px 3px 0px var(--black);
       --shadow-md: 5px 5px 0px var(--black);
       --shadow-lg: 7px 7px 0px var(--black);
     }
-  
   
     /* =========================================================
        BODY
@@ -59,13 +53,10 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       font-family: var(--font-primary);
       background: var(--bg);
       color: var(--text);
-  
       min-height: 100vh;
-  
       display: flex;
       flex-direction: column;
     }
-  
   
     /* =========================================================
        HEADER
@@ -73,15 +64,11 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     header {
       padding: 18px 28px;
-  
       background: var(--surface);
-  
       border-bottom: var(--border);
-  
       display: flex;
       align-items: center;
       justify-content: space-between;
-  
       position: relative;
       z-index: 10;
     }
@@ -95,49 +82,35 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     .logo {
       width: 32px;
       height: 32px;
-
       flex-shrink: 0;
-
       background: var(--yellow);
-
       border: 2px solid var(--black);
-
       box-shadow: var(--shadow-sm);
-
       display: flex;
       align-items: center;
       justify-content: center;
-
       overflow: hidden;
     }
 
     .logo svg {
       width: 125%;
       height: 125%;
-
       display: block;
-
       transform: none;
     }
   
     .app-title h1 {
       margin: 0;
-  
       font-size: 20px;
-  
       font-family: var(--font-display);
-  
       font-weight: 700;
-  
       color: var(--black);
-  
       letter-spacing: -0.5px;
     }
   
     .app-title h1 span {
       color: #42c773;
     }
-  
   
     /* =========================================================
        SERVER STATUS
@@ -146,17 +119,11 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     #status-dot {
       width: 10px;
       height: 10px;
-  
       border-radius: 50%;
-  
       background: var(--pink);
-  
       display: inline-block;
-  
       margin-right: 8px;
-  
       border: 2px solid var(--black);
-  
       transition: background 0.3s;
     }
   
@@ -166,18 +133,12 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     #status-text {
       font-size: 11px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 700;
-  
       color: var(--black);
-  
       text-transform: uppercase;
-  
       letter-spacing: 0.6px;
     }
-  
   
     /* =========================================================
        MAIN
@@ -185,21 +146,14 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     main {
       flex: 1;
-  
       display: flex;
       flex-direction: column;
-  
       max-width: 760px;
-  
       width: 100%;
-  
       margin: 0 auto;
-  
       padding: 30px 24px 50px;
-  
       gap: 24px;
     }
-  
   
     /* =========================================================
        INPUT CARD
@@ -207,19 +161,13 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .input-card {
       background: var(--surface);
-  
       border: var(--border);
-  
       padding: 18px;
-  
       display: flex;
       flex-direction: column;
-  
       gap: 14px;
-  
       box-shadow: var(--shadow-lg);
     }
-  
   
     /* =========================================================
        TEXTAREA
@@ -227,29 +175,17 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     textarea {
       width: 100%;
-  
       min-height: 115px;
-  
       background: var(--surface-alt);
-  
       border: 2px solid var(--black);
-  
       border-radius: 0;
-  
       color: var(--black);
-  
       font-size: 15px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 500;
-  
       padding: 14px;
-  
       resize: vertical;
-  
       outline: none;
-  
       transition:
         background 0.15s ease,
         box-shadow 0.15s ease;
@@ -257,7 +193,6 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     textarea:focus {
       background: #FFFFFF;
-  
       box-shadow: 4px 4px 0px var(--yellow);
     }
   
@@ -265,19 +200,15 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       color: #999999;
     }
   
-  
     /* =========================================================
        ACTIONS
        ========================================================= */
   
     .actions {
       display: flex;
-  
       gap: 10px;
-  
       flex-wrap: wrap;
     }
-  
   
     /* =========================================================
        BUTTON BASE
@@ -285,47 +216,34 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     button {
       padding: 10px 18px;
-  
       border-radius: 0;
-  
       border: 2px solid var(--black);
-  
       font-size: 12px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 700;
-  
       cursor: pointer;
-  
       transition:
         transform 0.08s ease,
         box-shadow 0.08s ease,
         background 0.15s ease;
-  
       box-shadow: var(--shadow-sm);
     }
   
     button:hover:not(:disabled) {
       transform: translate(-1px, -1px);
-  
       box-shadow: 4px 4px 0px var(--black);
     }
   
     button:active:not(:disabled) {
       transform: translate(3px, 3px);
-  
       box-shadow: 0px 0px 0px var(--black);
     }
   
     button:disabled {
       opacity: 0.45;
-  
       cursor: not-allowed;
-  
       box-shadow: 2px 2px 0px var(--black);
     }
-  
   
     /* =========================================================
        SEND BUTTON
@@ -333,9 +251,7 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     #send-btn {
       background: var(--green);
-  
       color: var(--black);
-  
       border-color: var(--black);
     }
   
@@ -343,16 +259,13 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       background: #63ED91;
     }
   
-  
     /* =========================================================
        FILE BUTTON
        ========================================================= */
   
     #file-btn {
       background: var(--yellow);
-  
       color: var(--black);
-  
       border-color: var(--black);
     }
   
@@ -364,24 +277,17 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       display: none;
     }
   
-  
     /* =========================================================
        CLIP FEED HEADER
        ========================================================= */
   
     .feed-header {
       font-size: 12px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 800;
-  
       color: var(--black);
-  
       text-transform: uppercase;
-  
       letter-spacing: 1.2px;
-  
       display: flex;
       align-items: center;
       gap: 8px;
@@ -389,15 +295,11 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .feed-header::before {
       content: '';
-  
       width: 10px;
       height: 10px;
-  
       background: var(--yellow);
-  
       border: 2px solid var(--black);
     }
-  
   
     /* =========================================================
        CLIP FEED
@@ -405,12 +307,9 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     #clip-feed {
       display: flex;
-  
       flex-direction: column;
-  
       gap: 14px;
     }
-  
   
     /* =========================================================
        CLIP CARD
@@ -418,22 +317,14 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .clip-item {
       background: var(--surface);
-  
       border: var(--border);
-  
       border-radius: 0;
-  
       padding: 15px 16px;
-  
       display: flex;
       flex-direction: column;
-  
       gap: 10px;
-  
       box-shadow: var(--shadow-md);
-  
       animation: fadeIn 0.2s ease;
-  
       transition:
         transform 0.12s ease,
         box-shadow 0.12s ease;
@@ -441,7 +332,6 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .clip-item:hover {
       transform: translate(-1px, -1px);
-  
       box-shadow: 7px 7px 0px var(--black);
     }
   
@@ -457,7 +347,6 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       }
     }
   
-  
     /* =========================================================
        SENT / RECEIVED
        ========================================================= */
@@ -470,19 +359,15 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       border-left: 8px solid var(--green);
     }
   
-  
     /* =========================================================
        CLIP META
        ========================================================= */
   
     .clip-meta {
       display: flex;
-  
       align-items: center;
-  
       gap: 8px;
     }
-  
   
     /* =========================================================
        CLIP BADGES
@@ -490,21 +375,13 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .clip-badge {
       font-size: 9px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 800;
-  
       padding: 5px 8px;
-  
       border: 2px solid var(--black);
-  
       border-radius: 0;
-  
       text-transform: uppercase;
-  
       letter-spacing: 0.8px;
-  
       color: var(--black);
     }
   
@@ -524,35 +401,25 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       background: var(--yellow);
     }
   
-  
     /* =========================================================
        DIRECTION / TIME
        ========================================================= */
   
     .clip-direction {
       font-size: 10px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 700;
-  
       color: #555555;
-  
       text-transform: uppercase;
     }
   
     .clip-time {
       font-size: 10px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 500;
-  
       color: #888888;
-  
       margin-left: auto;
     }
-  
   
     /* =========================================================
        CLIP CONTENT
@@ -560,25 +427,17 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .clip-content {
       font-size: 14px;
-  
       color: var(--black);
-  
       font-weight: 500;
-  
       word-break: break-word;
-  
       line-height: 1.6;
     }
   
     .clip-content a {
       color: #315DD8;
-  
       font-weight: 700;
-  
       text-decoration: underline;
-  
       text-decoration-thickness: 2px;
-  
       text-underline-offset: 2px;
     }
   
@@ -586,31 +445,23 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
       color: #1C46B0;
     }
   
-  
     /* =========================================================
        IMAGES
        ========================================================= */
   
     .clip-image {
       background: #F4F0E8;
-  
       border: 2px solid var(--black);
-  
       padding: 6px;
     }
   
     .clip-image img {
       display: block;
-  
       max-width: 100%;
-  
       max-height: 320px;
-  
       margin: 0 auto;
-  
       object-fit: contain;
     }
-  
   
     /* =========================================================
        COPY BUTTON
@@ -618,38 +469,24 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .copy-btn {
       align-self: flex-start;
-  
       background: var(--yellow);
-  
       color: var(--black);
-  
       border: 2px solid var(--black);
-  
       padding: 7px 13px;
-  
       font-size: 10px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 800;
-  
       border-radius: 0;
-  
       text-transform: uppercase;
-  
       letter-spacing: 0.7px;
-  
       box-shadow: 2px 2px 0px var(--black);
     }
   
     .copy-btn:hover {
       color: var(--black);
-  
       background: #FFE96B;
-  
       box-shadow: 3px 3px 0px var(--black);
     }
-  
   
     /* =========================================================
        DOWNLOAD BUTTON
@@ -657,37 +494,21 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .download-btn {
       display: inline-flex;
-  
       align-items: center;
-  
       gap: 6px;
-  
       align-self: flex-start;
-  
       margin-top: 4px;
-  
       padding: 8px 13px;
-  
       background: var(--green);
-  
       border: 2px solid var(--black);
-  
       border-radius: 0;
-  
       color: var(--black);
-  
       font-size: 11px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 800;
-  
       cursor: pointer;
-  
       text-decoration: none;
-  
       box-shadow: 2px 2px 0px var(--black);
-  
       transition:
         transform 0.08s ease,
         box-shadow 0.08s ease;
@@ -695,15 +516,12 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .download-btn:hover {
       background: #63ED91;
-  
       transform: translate(-1px, -1px);
-  
       box-shadow: 3px 3px 0px var(--black);
     }
   
     .download-btn:active {
       transform: translate(2px, 2px);
-  
       box-shadow: none;
     }
   
@@ -714,57 +532,136 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .empty-state {
       text-align: center;
-  
       color: #666666;
-  
       font-size: 13px;
-  
       font-family: var(--font-primary);
-  
       padding: 48px 20px;
     }
-  
   
     /* =========================================================
        DRAG & DROP OVERLAY
        ========================================================= */
   
     #drop-overlay {
-      display: none;
-  
       position: fixed;
-  
-      inset: 0;
-  
-      background: rgba(255, 225, 74, 0.18);
-  
-      border: 6px dashed var(--black);
-  
-      z-index: 100;
-  
-      align-items: center;
-  
-      justify-content: center;
-  
-      font-size: 22px;
-  
-      font-family: var(--font-display);
-  
-      font-weight: 700;
-  
-      color: var(--black);
-  
-      pointer-events: none;
-    }
-  
-    #drop-overlay::before {
-      content: 'DROP FILE HERE';
-    }
-  
-    #drop-overlay.visible {
+      inset: 16px;
+      z-index: 9999;
       display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(244, 240, 232, 0.94);
+      border: 4px solid var(--black);
+      box-shadow: 8px 8px 0 var(--black);
+      color: var(--black);
+      font-family: var(--font-primary);
+      text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity 0.15s ease,
+        visibility 0.15s ease;
     }
-  
+
+    /* Inner drop card */
+    #drop-overlay .drop-content {
+      width: min(420px, calc(100% - 32px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 36px 24px;
+      background: var(--surface);
+      border: var(--border);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(8px) rotate(-1deg);
+      transition: transform 0.15s ease;
+    }
+
+    /* Icon tile */
+    #drop-overlay .drop-icon {
+      width: 76px;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--yellow);
+      border: var(--border);
+      box-shadow: var(--shadow-md);
+      border-radius: 0;
+      font-size: 36px;
+      color: var(--black);
+    }
+
+    /* Main heading */
+    #drop-overlay .drop-title {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.8px;
+      text-transform: uppercase;
+    }
+
+    /* Supporting text */
+    #drop-overlay .drop-subtitle {
+      max-width: 280px;
+      font-family: var(--font-primary);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    /* Small accent label */
+    #drop-overlay .drop-content::after {
+      content: "READY TO TRANSFER";
+      display: inline-block;
+      margin-top: 4px;
+      padding: 7px 10px;
+      background: var(--green);
+      border: 2px solid var(--black);
+      box-shadow: var(--shadow-sm);
+      color: var(--black);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    /* Active drag state */
+    #drop-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #drop-overlay.visible .drop-content {
+      transform: translateY(0) rotate(0deg);
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      #drop-overlay {
+        inset: 10px;
+        border-width: 3px;
+        box-shadow: 5px 5px 0 var(--black);
+      }
+
+      #drop-overlay .drop-content {
+        padding: 28px 18px;
+        gap: 12px;
+        box-shadow: var(--shadow-md);
+      }
+
+      #drop-overlay .drop-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 30px;
+      }
+
+      #drop-overlay .drop-title {
+        font-size: 25px;
+      }
+    }
   
     /* =========================================================
        UPLOAD PROGRESS
@@ -772,11 +669,8 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     #upload-progress {
       display: none;
-  
       flex-direction: column;
-  
       gap: 7px;
-  
       padding: 8px 0 2px;
     }
   
@@ -786,38 +680,26 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .progress-label {
       font-size: 11px;
-  
       font-family: var(--font-primary);
-  
       font-weight: 700;
-  
       color: #555555;
     }
   
     .progress-track {
       width: 100%;
-  
       height: 10px;
-  
       background: #FFFFFF;
-  
       border: 2px solid var(--black);
-  
       border-radius: 0;
-  
       overflow: hidden;
     }
   
     .progress-fill {
       height: 100%;
-  
       background: var(--green);
-  
       transition: width 0.1s ease;
-  
       width: 0%;
     }
-  
   
     /* =========================================================
        INDETERMINATE PROGRESS
@@ -837,21 +719,16 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
     .progress-fill.indeterminate {
       position: relative;
-  
       width: 40% !important;
-  
       background: var(--yellow);
-  
       animation: indeterminate 1s linear infinite;
     }
-  
   
     /* =========================================================
        RESPONSIVE
        ========================================================= */
   
     @media (max-width: 600px) {
-  
       header {
         padding: 16px 18px;
       }
@@ -862,19 +739,16 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
       main {
         padding: 22px 16px 40px;
-  
         gap: 20px;
       }
   
       .input-card {
         padding: 14px;
-  
         box-shadow: var(--shadow-md);
       }
   
       textarea {
         min-height: 100px;
-  
         font-size: 14px;
       }
   
@@ -888,13 +762,11 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
   
       .clip-item {
         padding: 13px;
-  
         box-shadow: 4px 4px 0px var(--black);
       }
   
       .clip-item:hover {
         transform: none;
-  
         box-shadow: 4px 4px 0px var(--black);
       }
   
@@ -948,7 +820,16 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     </div>
   </main>
 
-  <div id="drop-overlay">Drop to send to phone</div>
+  <div id="drop-overlay">
+    <div class="drop-content">
+      <div class="drop-icon">↓</div>
+      <div class="drop-title">Drop files here</div>
+      <div class="drop-subtitle">
+        Send files directly to your phone.
+        Just drop them anywhere on the screen.
+      </div>
+    </div>
+  </div>
 
   <script>
     const WS_URL = 'ws://' + location.hostname + ':${wsPort}';
@@ -963,6 +844,7 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     const emptyState = document.getElementById('empty-state');
     const fileInput  = document.getElementById('file-input');
     const dropOverlay = document.getElementById('drop-overlay');
+    let dragCounter = 0;
 
     // --- WebSocket ---
     function connect() {
@@ -1105,17 +987,45 @@ export const getWebUI = (wsPort: number): string => `<!DOCTYPE html>
     }
 
     // --- Drag & Drop ---
-    document.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.classList.add('visible'); });
-    document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) dropOverlay.classList.remove('visible'); });
+    document.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer.types.length > 0) {
+        dropOverlay.classList.add('visible');
+      }
+    });
+
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        dropOverlay.classList.remove('visible');
+      }
+    });
+
     document.addEventListener('drop', (e) => {
       e.preventDefault();
+      dragCounter = 0;
       dropOverlay.classList.remove('visible');
       const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      if (file) {
+        handleFile(file);
+        return;
+      }
+      
       const text = e.dataTransfer.getData('text');
-      if (text && !file) {
-        const isLink = /^https?:\\/\\//.test(text);
-        sendMessage({ type: isLink ? 'link' : 'text', content: text, id: generateId() });
+      if (text) {
+        const isLink = /^https?:\/\//.test(text);
+        sendMessage({
+          type: isLink ? 'link' : 'text',
+          content: text,
+          id: generateId()
+        });
       }
     });
 
