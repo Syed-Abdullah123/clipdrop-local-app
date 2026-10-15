@@ -27,6 +27,7 @@ const SplashScreen = () => {
       duration: 700,
       easing: Easing.out(Easing.cubic),
     });
+
     blueTranslateY.value = withTiming(0, {
       duration: 700,
       easing: Easing.out(Easing.cubic),
@@ -34,16 +35,22 @@ const SplashScreen = () => {
 
     textOpacity.value = withDelay(
       650,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) })
-    );
-    subTextOpacity.value = withDelay(
-      850,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) })
+      withTiming(1, {
+        duration: 500,
+        easing: Easing.out(Easing.ease),
+      }),
     );
 
-    // Navigate to Home after the animation has settled + a brief pause to read the text
+    subTextOpacity.value = withDelay(
+      850,
+      withTiming(1, {
+        duration: 500,
+        easing: Easing.out(Easing.ease),
+      }),
+    );
+
     const timer = setTimeout(() => {
-      navigation.replace('Home');
+      navigation.replace("Home");
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -61,13 +68,13 @@ const SplashScreen = () => {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#0f0f0f',
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: "#F4F0E8",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <ClipDropLogo
-        size={140}
+        size={150}
         greenTranslateY={greenTranslateY}
         blueTranslateY={blueTranslateY}
       />
@@ -76,38 +83,62 @@ const SplashScreen = () => {
         style={[
           {
             marginTop: 24,
-            color: '#fff',
+            color: "#111111",
             fontSize: 32,
-            // fontWeight: '700',
-            fontFamily: 'CabinetG_Bold',
+            fontFamily: "CabinetG_Bold",
           },
           textAnimatedStyle,
         ]}
       >
         ClipDrop
-        <Text style={{ color: '#4ade80' }}>{' '}Local</Text>
+        <Text
+          style={{
+            color: "#4ADE80",
+            fontFamily: "CabinetG_Bold",
+          }}
+        >
+          {" "}
+          Local
+        </Text>
       </Animated.Text>
 
       <Animated.Text
         style={[
           {
+            marginTop: 4,
             letterSpacing: 1.5,
-            color: '#a1a1aa',
+            color: "#555555",
             fontSize: 14,
-            fontFamily: 'CabinetG_Regular',
+            fontFamily: "CabinetG_Regular",
           },
           subTextAnimatedStyle,
         ]}
       >
         SEND
-        <Text style={{ color: '#4ade80', fontFamily: 'CabinetG_Regular', fontSize: 20 }}>{' '}.{' '}</Text>
+        <Text
+          style={{
+            color: "#111111",
+            fontFamily: "CabinetG_Bold",
+            fontSize: 18,
+          }}
+        >
+          {"  •  "}
+        </Text>
         RECEIVE
-        <Text style={{ color: '#4ade80', fontFamily: 'CabinetG_Regular', fontSize: 20 }}>{' '}.{' '}</Text>
+        <Text
+          style={{
+            color: "#111111",
+            fontFamily: "CabinetG_Bold",
+            fontSize: 18,
+          }}
+        >
+          {"  •  "}
+        </Text>
         ANY FILE
       </Animated.Text>
     </View>
-  )
-}
+  );
+};
 
 export default SplashScreen
 
